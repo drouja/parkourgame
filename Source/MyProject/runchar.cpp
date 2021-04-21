@@ -1,0 +1,635 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#include "runchar.h"
+#include "Omnitool.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
+#include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/InputComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Controller.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "DrawDebugHelpers.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Animation/AnimInstance.h"
+#include "Math/Vector.h"
+#include <string>
+#include <algorithm>
+#include <math.h>
+
+//Helper functions
+
+template<class T>
+T clamp(const T in, T min, T max)
+{
+	if (min > max) std::swap <T>(min, max);
+	return std::max(min, std::min(in, max));
+}
+
+float normalize360(float angle)
+{
+	angle = fmod(angle, 360.0); // make sure angle is within 360 degrees
+	if (angle < 0) angle += 360;
+	return angle;
+}
+
+float clampangle(float ang, float min, float max)
+{
+	if (min > max) std::swap(min, max);
+	float n_min = UKismetMathLibrary::NormalizeAxis(min - ang);
+	float n_max = UKismetMathLibrary::NormalizeAxis(max - ang);
+	if (n_min < 0 && n_max>0) return ang;
+	if (std::abs(n_min) < std::abs(n_max)) return min;
+	return max;
+}
+
+FVector normalizevector(FVector invector)
+{
+	float length = invector.Size();
+	return invector / length;
+}
+
+FVector Arunchar::Setslidevector()
+{
+	FHitResult Outhit{};
+	UKismetSystemLibrary::LineTraceSingle(this, GetMesh()->GetComponentLocation(), GetMesh()->GetComponentLocation() + FVector{ 0,0,-200 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f);
+	slidevector = UKismetMathLibrary::Cross_VectorVector(Outhit.Normal, GetActorRightVector()) * -1;
+	return slidevector;
+}
+
+void Arunchar::Allowalli()
+{
+	takeyaw = true;
+	takepitch = true;
+	takews = true;
+	takead = true;
+	takecrouch = true;
+	takejump = true;
+}
+
+void Arunchar::Disablealli()
+{
+	takeyaw = false;
+	takepitch = false;
+	takews = false;
+	takead = false;
+	takecrouch = false;
+	takejump = false;
+}
+
+void Arunchar::setgrav(bool resetgrav, float newgrav)
+{
+	if (resetgrav)  GetCharacterMovement()->GravityScale = oggravscale;
+	else
+	{
+		GetCharacterMovement()->GravityScale = newgrav;
+	}
+}
+
+//----------------
+
+// Sets default values
+Arunchar::Arunchar()
+{
+ 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = false;
+	
+	sensitivity=3;
+
+	pitch = 0;
+
+	yaw = GetActorRotation().Yaw;
+	yawlastframe = yaw;
+	yawchangeoverframe = 0;
+	rootyawoffset = 0;
+	curveval = 0;
+	curvevall = 0;
+	turnchange = 5;
+	turnratio = 1;
+	isturning = false;
+	inrangeofinteractible = false;
+	
+	issliding = false;
+
+	//Input control
+	takeyaw = true;
+	takepitch = true;
+	takews = true;
+	takead = true;
+	takecrouch = true;
+	takejump = true;
+	interactbuttondown = false;
+	//
+
+	ismoving = 0;
+	hardfalltime=1.5;
+	willroll = 0;
+	landenddelegate.BindUObject(this, &Arunchar::OnFallAnimationEnded);
+	
+	//vault
+	canvault = true;
+	vaulting = false;
+	vaultenddelegate.BindUObject(this, &Arunchar::endvault);
+	//
+
+	flowtime = 0;
+
+	//Wallrun
+	canwallrun=false;
+	iswallrunning=false;
+	oggravscale = GetCharacterMovement()->GravityScale;
+	//
+
+	//Component stuff
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>("FPCam");
+	FollowCamera->SetupAttachment(GetMesh(), FName("Camsocket"));
+	omnitool = CreateDefaultSubobject<UChildActorComponent>("Omnitool");
+	omnitool->SetChildActorClass(omnitoolclass);
+	omnitool->SetupAttachment(GetMesh(), FName("LeftForeArm"));
+
+	//Wallclimb
+	maxclimbtime = 0.4;
+	wallclimbtime = 0.0f;
+	wallclimbforce = 300.0f;
+
+	//Zipline
+	isziplining = false;
+}
+
+// Called when the game starts or when spawned
+void Arunchar::BeginPlay()
+{
+	Super::BeginPlay();
+	GetWorldTimerManager().SetTimer(getmovingtimerhandle, this, &Arunchar::setisMoving,0.01f,true,0.0f);
+	GetWorldTimerManager().SetTimer(slideupdatehandle, this, &Arunchar::Updateslide, 0.01f, true, 0.0f);
+	GetWorldTimerManager().SetTimer(updateaccelhandle, this, &Arunchar::updateaccel, 0.01f, true, 0.0f);
+	GetWorldTimerManager().SetTimer(upwallrun, this, &Arunchar::updatewallrun, 0.005f, true, 0.0f);
+	GetWorldTimerManager().SetTimer(updatevaulthandle, this, &Arunchar::vaultupdate, 0.005f, true, 0.0f);
+	GetWorldTimerManager().SetTimer(updatewallblockhandle, this, &Arunchar::updatewallblock, 0.001f, true, 0.0f);
+	GetWorldTimerManager().SetTimer(updatewallclimbhandle, this, &Arunchar::updatewallclimb, 0.005f, true, 0.0f);
+
+	origbrakedecel = GetCharacterMovement()->BrakingDecelerationWalking;
+	origfrict = GetCharacterMovement()->GroundFriction;
+	origcrouchspeed = GetCharacterMovement()->MaxWalkSpeedCrouched;
+	pc=GEngine->GetFirstLocalPlayerController(GetWorld());
+
+
+}
+
+// Called every frame
+void Arunchar::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+// Called to bind functionality to input
+void Arunchar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PlayerInputComponent->BindAxis("MoveForward", this, &Arunchar::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &Arunchar::MoveRight);
+	PlayerInputComponent->BindAxis("Turn", this, &Arunchar::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &Arunchar::Lookup);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &Arunchar::Jump);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &Arunchar::Crouch);
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &Arunchar::Interact);
+}
+
+void Arunchar::MoveForward(float Value)
+{
+	if (takews && !issliding && (Controller != nullptr) && (Value != 0.0f))
+	{
+		// find out which way is forward
+		const FRotator Rotation = GetActorRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		// get forward vector
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		AddMovementInput(Direction, Value);
+	}
+}
+
+void Arunchar::MoveRight(float Value)
+{
+	if (takead && !issliding && (Controller != nullptr) && (Value != 0.0f))
+	{
+		// find out which way is right
+		const FRotator Rotation = GetActorRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		// get right vector 
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		// add movement in that direction
+		AddMovementInput(Direction, Value);
+	}
+}
+
+
+void Arunchar::Lookup(float Axisval)
+{
+	if (takepitch)
+	{
+		AddControllerPitchInput(sensitivity*Axisval* (GetWorld()->GetDeltaSeconds() * (1 / GetActorTimeDilation())));
+	}
+	pitch = UKismetMathLibrary::NormalizeAxis(GetControlRotation().Pitch - GetActorRotation().Pitch);
+}
+
+void Arunchar::Turn(float Axisval)
+{
+	if (UKismetMathLibrary::Abs(Axisval) > 0.5) turnratio = 1 / UKismetMathLibrary::Abs(Axisval);
+	else turnratio = 1;
+	if (takeyaw)
+	{
+		AddControllerYawInput(sensitivity * Axisval * (GetWorld()->GetDeltaSeconds() * (1 / GetActorTimeDilation())));
+		if (issliding|| iswallrunning || isziplining)
+		{
+			
+			FRotator rot{ pc->GetControlRotation().Pitch,clampangle(pc->GetControlRotation().Yaw,sliderot-89,sliderot+89),pc->GetControlRotation().Roll };
+			pc->SetControlRotation(rot);
+		}
+		calculaterootyawoffset();
+	}
+}
+
+void Arunchar::calculaterootyawoffset()
+{
+	yawlastframe = yaw;
+	yaw = pc->GetControlRotation().Yaw;
+	yawchangeoverframe = yaw - yawlastframe;
+	if (ismoving && !issliding && !iswallrunning)
+	{
+		rootyawoffset = 0;
+		return;
+	}
+	else
+	{
+		rootyawoffset = UKismetMathLibrary::NormalizeAxis(yawchangeoverframe + rootyawoffset);
+	}
+	if (isturning && !issliding && !iswallrunning)
+	{
+		curvevall = curveval;
+		curveval = GetMesh()->GetAnimInstance()->GetCurveValue(TEXT("Distancecurve"));
+		rootyawoffset += curveval - curvevall;
+	}
+
+}
+
+//Crouch related functions
+void Arunchar::Crouch()
+{
+	if (!takecrouch) return;
+	if (GetCharacterMovement()->IsCrouching()) ACharacter::UnCrouch();
+	if (GetCharacterMovement()->IsFalling() && !willroll)
+	{
+
+		
+		FHitResult Outhit{};
+		if (UKismetSystemLibrary::LineTraceSingle(this, GetMesh()->GetComponentLocation(), GetMesh()->GetComponentLocation() + FVector{ 0,0,-200 }, UEngineTypes::ConvertToTraceType(ECC_Camera),false,actorsToIgnore, EDrawDebugTrace::None,Outhit,true, FLinearColor::Red, FLinearColor::Green, 0.0f))
+		{
+			willroll = true;
+		}
+		return;
+	}
+	FVector vel = GetVelocity();
+	if (!GetCharacterMovement()->IsCrouching() && vel.Size() >300 && UKismetMathLibrary::Dot_VectorVector(vel,GetActorForwardVector())>0)
+	{
+		Setslidevector();
+		Startslide();
+	}
+	
+}
+
+void Arunchar::Startslide()
+{
+	UCharacterMovementComponent* charmov=GetCharacterMovement();
+	if (charmov->IsWalking() && slidevector.Z <= 0.02)
+	{
+		sliderot = pc->GetControlRotation().Yaw;
+		issliding = true;
+		charmov->GroundFriction = 0;
+		charmov->MaxWalkSpeedCrouched = charmov->MaxWalkSpeed+20;
+		slidefv = GetActorForwardVector();
+		sliderv = GetActorRightVector();
+		ACharacter::Crouch();
+	}
+}
+
+void Arunchar::Updateslide()
+{
+	if (!issliding) return;
+	UCharacterMovementComponent* charmov = GetCharacterMovement();
+	if (GetVelocity().Size()<35 || !charmov->IsCrouching())
+	{
+		Endslide();
+		return;
+	}
+	if (Setslidevector().Z <= -0.2)
+	{
+		charmov->BrakingDecelerationWalking = 0;
+		charmov->AddImpulse(GetActorForwardVector(),true);
+	}
+	else
+	{
+		charmov->BrakingDecelerationWalking=origbrakedecel / 6;
+	}
+	FHitResult Outhit{};
+	FHitResult Outhit2{};
+	if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + FVector{ 0,0,-100 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)
+		&&
+		UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation()+100*slidefv, GetActorLocation() + 100 * slidefv + FVector{ 0,0,-200 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit2, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
+		)
+	{
+		SetActorRotation(UKismetMathLibrary::MakeRotFromZX(UKismetMathLibrary::Cross_VectorVector(Outhit2.Location-Outhit.Location,sliderv),GetActorForwardVector()));
+	}
+}
+
+void Arunchar::Endslide()
+{
+	UCharacterMovementComponent* charmov = GetCharacterMovement();
+	issliding = false;
+	ACharacter::UnCrouch();
+	charmov->GroundFriction = origfrict;
+	charmov->BrakingDecelerationWalking = origbrakedecel;
+	charmov->MaxWalkSpeedCrouched = origcrouchspeed;
+	SetActorRotation(UKismetMathLibrary::MakeRotFromZX(UKismetMathLibrary::GetUpVector(FRotator{0,0,0}), GetActorForwardVector()));
+
+}
+//------------------------
+
+
+void Arunchar::Jump()
+{
+	
+	if (takejump && !GetCharacterMovement()->IsFalling())
+	{
+		Super::Jump();
+		takeyaw = false;
+		FTimerHandle wallrunstart;
+		sliderv = GetActorRightVector();
+		canwallclimb = true;
+		GetWorldTimerManager().SetTimer(wallrunstart, this, &Arunchar::delaywallrun1, 0.5f, false);
+	}
+	else if (iswallrunning)
+	{
+		ACharacter::LaunchCharacter(500*(FollowCamera->GetForwardVector()+FollowCamera->GetUpVector()),true,true);
+		canwallrun = false;
+	}
+}
+
+void Arunchar::Falling()
+{
+	startheight = GetActorLocation().Z;
+}
+
+void Arunchar::setisMoving()
+{
+	ismoving = (GetCharacterMovement()->GetCurrentAcceleration().Size() > 0);
+}
+
+void Arunchar::Landed(const FHitResult& Hit)
+{
+	canvault = true;
+	//Super::OnLanded(Hit); do I need? Can't find function definition
+	if (GetActorLocation().Z-startheight<-900)
+	{
+		Disablealli();
+		if (willroll)
+		{
+			PlayAnimMontage(Rolllanding);
+			GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(landenddelegate, Rolllanding);
+			FollowCamera->bUsePawnControlRotation = 0;
+		}
+		else
+		{
+			PlayAnimMontage(Hardlanding);
+			GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(landenddelegate, Hardlanding);
+		}
+	}
+	else takeyaw = true;
+	willroll = false;
+	
+}
+
+void Arunchar::OnFallAnimationEnded(UAnimMontage* mont, bool interupted)
+{
+	FollowCamera->bUsePawnControlRotation = 1;
+	Allowalli();
+}
+
+void Arunchar::updateaccel()
+{
+	flowtime += 0.01f;
+	if (GetVelocity().Size() < 100) flowtime = 0;
+	GetCharacterMovement()->MaxWalkSpeed=accelcurve->GetFloatValue(flowtime);
+}
+
+void Arunchar::delaywallrun1()
+{
+	if (!vaulting)
+	{
+		canwallrun = true;
+		FTimerHandle wallruntime;
+		GetWorldTimerManager().SetTimer(wallruntime, this, &Arunchar::delaywallrun2, 1.2f, false);
+	}
+}
+
+void Arunchar::delaywallrun2()
+{
+	canwallrun = false;
+}
+
+void Arunchar::updatewallrun()
+{
+	
+	if (canwallrun && GetCharacterMovement()->IsFalling())
+	{
+		FHitResult outhit;
+		FVector wallrunloc{};
+		FVector wallrunnorm{};
+		if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + -75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
+		{
+			wallrunloc = outhit.Location;
+			wallrunnorm = outhit.Normal;
+			walldirectflip = 1;
+		}
+		else if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + 75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
+		{
+			wallrunloc = outhit.Location;
+			wallrunnorm = outhit.Normal;
+			walldirectflip = -1;
+		}
+		else
+		{
+			iswallrunning = false;
+			GetCharacterMovement()->GravityScale = oggravscale;
+			return;
+		}
+		if (-0.52 <= wallrunnorm.Z && wallrunnorm.Z <= 0.52)
+		{
+			iswallrunning = true;
+			if (walldirectflip == 1)
+			{
+				sliderot = normalize360(UKismetMathLibrary::MakeRotFromYZ(wallrunnorm, GetActorUpVector()).Yaw);
+			}
+			else
+			{
+				sliderot = normalize360(UKismetMathLibrary::MakeRotFromYZ(-1*wallrunnorm, GetActorUpVector()).Yaw);
+			}
+			
+			LaunchCharacter(wallrunloc - GetActorLocation(),false,false);
+			LaunchCharacter(GetVelocity().Size()*UKismetMathLibrary::Cross_VectorVector(wallrunnorm, FVector{0,0,walldirectflip}), true, true);
+			GetCharacterMovement()->GravityScale = 0;
+		}
+	}
+	else
+	{
+		iswallrunning = false;
+		GetCharacterMovement()->GravityScale = oggravscale;
+		return;
+	}
+	
+	
+}
+
+void Arunchar::vaultupdate()
+{
+	if (vaulting)
+	{
+		FHitResult outhit;
+		if (!(UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() -37* GetActorForwardVector() - FVector{0,0,20}, GetActorLocation() - FVector{0,0,20 } + GetActorForwardVector() * 200, FVector(5, 5, 20), GetActorRotation(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)))
+		{
+			vaulting = false;
+			MoveIgnoreActorRemove(remcollisonactor);
+			takeyaw = true;
+			takews = true;
+			takead = true;
+		}
+		else
+		{
+		vaulttime += 0.005f;
+		SetActorLocation(FVector{GetActorLocation().X,GetActorLocation().Y, UKismetMathLibrary::FInterpTo(GetActorLocation().Z,vaultloc.Z,vaulttime,.8f) });
+		}
+		return;
+	}
+	if (!canvault || !GetCharacterMovement()->IsFalling() || iswallrunning) return;
+
+	if (GetVelocity().Z < -1 || UKismetMathLibrary::Dot_VectorVector(normalizevector(GetVelocity()), GetActorForwardVector()) < 0.4) return;
+
+	FHitResult outhit;
+	FHitResult outhit2;
+	FHitResult outhit3;
+	if (UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() + FVector{ 0,0,20 }, GetActorLocation() + FVector{ 0,0,20 } + GetActorForwardVector() * 200, FVector(10, 10, 20), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f) && 
+		!UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() + FVector{ 0,0,80 }, GetActorLocation() + FVector{ 0,0,80 } + GetActorForwardVector() * 200, FVector(10, 10, 40), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit2, true, FLinearColor::Red, FLinearColor::Red, 0.0f)
+		)
+	{
+		if (UKismetSystemLibrary::LineTraceSingle(this, outhit.Location+ FVector{ 0,0,50 } - 15*outhit.Normal, outhit.Location + FVector{ 0,0,-30 } - 15 * outhit.Normal, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit2, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
+			&&
+			!UKismetSystemLibrary::BoxTraceSingle(this, outhit.Location + FVector{ 0,0,-50 } - 150 * outhit.Normal, outhit.Location + FVector{ 0,0,-50 } - 300 * outhit.Normal, FVector(10, 10, 40), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit3, true, FLinearColor::Red, FLinearColor::Red, 0.0f)
+			)
+		{
+
+		StopJumping();
+		vaultloc = outhit2.Location;
+		vaulting = true;
+		vaultanim = true;
+		canvault = false;
+		canwallrun = false;
+		takeyaw = false;
+		takews = false;
+		takead = false;
+		vaulttime = 0;
+
+
+		//Setupmontage end delegate
+		PlayAnimMontage(vault1);
+		GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(vaultenddelegate, vault1);
+		remcollisonactor = outhit.GetActor();
+		MoveIgnoreActorAdd(remcollisonactor);
+		//-------------------------
+
+		}
+		
+		
+	}
+}
+
+void Arunchar::endvault(UAnimMontage* mont, bool interupted)
+{
+	vaultanim = false;
+}
+
+void Arunchar::updatewallblock()
+{
+	righthandwallblock = false;
+	lefthandwallblock = false;
+
+	if (!pc->IsInputKeyDown(EKeys::W) || vaultanim || iswallclimbing || GetCharacterMovement()->IsFalling()) return;
+
+	FVector rightsocketloc = GetMesh() -> GetSocketLocation(FName("RightShoulderSocket"));
+	FVector leftsocketloc = GetMesh()->GetSocketLocation(FName("LeftShoulderSocket"));
+
+	FHitResult outhit;
+	
+	if (UKismetSystemLibrary::LineTraceSingle(this, rightsocketloc, rightsocketloc + 50 * GetActorForwardVector(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f))
+	{
+		righthandwallblockloc = outhit.Location - 3*GetActorForwardVector();
+		righthandwallblock = true;
+	}
+	if (UKismetSystemLibrary::LineTraceSingle(this, leftsocketloc, leftsocketloc + 50 * GetActorForwardVector(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f))
+	{
+		lefthandwallblockloc = outhit.Location-3*GetActorForwardVector();
+		lefthandwallblock = true;
+	}
+}
+
+void Arunchar::Interact()
+{
+	if (inrangeofinteractible)
+	{
+		PlayAnimMontage(Interactanim);
+	}
+	interactbuttondown = true;
+	FTimerHandle butresettime;
+	GetWorldTimerManager().SetTimer(butresettime, this, &Arunchar::UnInteract, 0.5f, false);
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some debug message!"));
+	
+}
+
+void Arunchar::UnInteract()
+{
+	interactbuttondown = false;
+}
+
+void Arunchar::updatewallclimb()
+{
+	if (!canwallclimb || iswallrunning)
+	{
+		iswallclimbing = false;
+		wallclimbtime = 0.0f;
+		return;
+	}
+	if (wallclimbtime >= maxclimbtime)
+	{
+		canwallclimb = false;
+		return;
+	}
+	wallclimbtime += 0.005f;
+
+	FVector actorloc = GetActorLocation();
+	FVector actorup = GetActorUpVector();
+	FVector aimvector=50*normalizevector(FVector{FollowCamera->GetForwardVector().X,FollowCamera->GetForwardVector().Y,0});
+	FHitResult Outhit{};
+	FHitResult Outhit2{};
+	if (UKismetSystemLibrary::LineTraceSingle(this, actorloc + 80 * actorup, actorloc + 80 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)
+		&&
+		UKismetSystemLibrary::LineTraceSingle(this, actorloc - 100 * actorup, actorloc - 100 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit2, true, FLinearColor::Red, FLinearColor::Green, 0.0f)
+		)
+	{
+		iswallclimbing = true;
+		FVector wallclimbloc = { Outhit.Location.X,Outhit.Location.Y,actorloc.Z };
+		LaunchCharacter(wallclimbloc-actorloc,false,false);
+		LaunchCharacter(FVector{ 0,0,wallclimbforce }, false, true);
+	}
+}
