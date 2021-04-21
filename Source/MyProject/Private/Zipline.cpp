@@ -8,6 +8,7 @@
 #include "../runchar.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "MyProject/UEHelperfuncts.h"
 
 // Sets default values
 AZipline::AZipline()
@@ -86,12 +87,14 @@ void AZipline::BeginOverlap(UPrimitiveComponent* OverlappedComponent,
 		FRotator lookrot = UKismetMathLibrary::FindLookAtRotation(spline->GetLocationAtSplinePoint(1, ESplineCoordinateSpace::World), spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World));
 
 		float distalongspline = (asrunchar->GetActorLocation() - spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World)).Size();
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(lookrot.Yaw));
+		
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(normalize360(lookrot.Yaw)));
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::SanitizeFloat(asrunchar->GetActorRotation().Yaw));
 
 		asrunchar->SetActorLocation(spline->GetLocationAtDistanceAlongSpline(distalongspline, ESplineCoordinateSpace::World) - FVector{ 0,0,110 });
 		asrunchar->sliderot = lookrot.Yaw;
 		asrunchar->setgrav(false, 0.0f);
+		lookrot.Yaw = normalize360(lookrot.Yaw);
 		asrunchar->yaw = lookrot.Yaw;
 		asrunchar->calculaterootyawoffset();
 		asrunchar->takeyaw = true;

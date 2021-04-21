@@ -17,38 +17,11 @@
 #include <string>
 #include <algorithm>
 #include <math.h>
+#include "UEHelperfuncts.h"
 
 //Helper functions
 
-template<class T>
-T clamp(const T in, T min, T max)
-{
-	if (min > max) std::swap <T>(min, max);
-	return std::max(min, std::min(in, max));
-}
 
-float normalize360(float angle)
-{
-	angle = fmod(angle, 360.0); // make sure angle is within 360 degrees
-	if (angle < 0) angle += 360;
-	return angle;
-}
-
-float clampangle(float ang, float min, float max)
-{
-	if (min > max) std::swap(min, max);
-	float n_min = UKismetMathLibrary::NormalizeAxis(min - ang);
-	float n_max = UKismetMathLibrary::NormalizeAxis(max - ang);
-	if (n_min < 0 && n_max>0) return ang;
-	if (std::abs(n_min) < std::abs(n_max)) return min;
-	return max;
-}
-
-FVector normalizevector(FVector invector)
-{
-	float length = invector.Size();
-	return invector / length;
-}
 
 FVector Arunchar::Setslidevector()
 {
@@ -251,6 +224,7 @@ void Arunchar::Turn(float Axisval)
 		}
 		calculaterootyawoffset();
 	}
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::SanitizeFloat(GetActorRotation().Yaw));
 }
 
 void Arunchar::calculaterootyawoffset()
@@ -258,6 +232,7 @@ void Arunchar::calculaterootyawoffset()
 	yawlastframe = yaw;
 	yaw = pc->GetControlRotation().Yaw;
 	yawchangeoverframe = yaw - yawlastframe;
+
 	if (ismoving && !issliding && !iswallrunning)
 	{
 		rootyawoffset = 0;
