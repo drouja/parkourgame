@@ -13,6 +13,8 @@ UCLASS()
 class MYPROJECT_API Arunchar : public ACharacter
 {
 	GENERATED_BODY()
+	DECLARE_DELEGATE_FourParams(Endziplinesignature, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32);
+
 	/** Follow camera */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
@@ -109,12 +111,10 @@ public:
 	float yaw;
 protected:
 	float yawlastframe;
-public: //test, revert back to protected later
 	float yawchangeoverframe;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Cameracontrol)
 	float turnchange;
 
-public: //test, revert back to protected later
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Cameracontrol)
 	float rootyawoffset;
 public:
@@ -224,5 +224,6 @@ protected:
 		void setgrav(bool resetgrav = false, float newgrav = 0.0f);
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool isziplining;
+		Endziplinesignature endoverlapdelegate;
 
 };

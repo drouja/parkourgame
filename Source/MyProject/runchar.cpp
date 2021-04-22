@@ -255,7 +255,11 @@ void Arunchar::Crouch()
 {
 	if (!takecrouch) return;
 	if (GetCharacterMovement()->IsCrouching()) ACharacter::UnCrouch();
-	if (GetCharacterMovement()->IsFalling() && !willroll)
+	if (isziplining)
+	{
+		endoverlapdelegate.ExecuteIfBound(nullptr,this,nullptr,0);
+	}
+	else if (GetCharacterMovement()->IsFalling() && !willroll)
 	{
 
 		

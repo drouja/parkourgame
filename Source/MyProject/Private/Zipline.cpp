@@ -85,22 +85,16 @@ void AZipline::BeginOverlap(UPrimitiveComponent* OverlappedComponent,
 	if (asrunchar != nullptr)
 	{
 		asrunchar->isziplining = true;
+		asrunchar->endoverlapdelegate.BindUObject(this, &AZipline::EndOverlap);
 		FRotator lookrot = UKismetMathLibrary::FindLookAtRotation(spline->GetLocationAtSplinePoint(1, ESplineCoordinateSpace::World), spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World));
 
 		float distalongspline = (asrunchar->GetActorLocation() - spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World)).Size();
-		
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::SanitizeFloat(UKismetMathLibrary::NormalizeAxis(lookrot.Yaw)));
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::SanitizeFloat(asrunchar->GetControlRotation().Yaw));
-
 		asrunchar->SetActorLocation(spline->GetLocationAtDistanceAlongSpline(distalongspline, ESplineCoordinateSpace::World) - FVector{ 0,0,110 });
 		asrunchar->sliderot = lookrot.Yaw;
 		asrunchar->setgrav(false, 0.0f);
 		lookrot.Yaw = UKismetMathLibrary::NormalizeAxis(lookrot.Yaw);
 		asrunchar->yaw = lookrot.Yaw;
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, FString::SanitizeFloat(asrunchar->rootyawoffset));
 		asrunchar->calculaterootyawoffset();
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Purple, FString::SanitizeFloat(asrunchar->yawchangeoverframe));
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::SanitizeFloat(asrunchar->rootyawoffset));
 		asrunchar->takeyaw = true;
 
 
@@ -116,6 +110,7 @@ void AZipline::EndOverlap(UPrimitiveComponent* OverlappedComponent,
 	asrunchar = Cast<Arunchar>(OtherActor);
 	if (asrunchar != nullptr && asrunchar->isziplining)
 	{
+		asrunchar->endoverlapdelegate.Unbind();
 		asrunchar->setgrav(true);
 		asrunchar->isziplining = false;
 		GetWorldTimerManager().ClearTimer(updatezipmovementhandle);
