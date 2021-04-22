@@ -35,3 +35,10 @@ inline FVector normalizevector(FVector invector)
 	float length = invector.Size();
 	return invector / length;
 }
+
+inline float smallestangledelta(float a, float b)
+{
+	float c = a - b;
+	c += (c > 180) ? -360 : (c < -180) ? 360 : 0;
+	return c;
+}

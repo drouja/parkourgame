@@ -224,7 +224,6 @@ void Arunchar::Turn(float Axisval)
 		}
 		calculaterootyawoffset();
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::SanitizeFloat(GetActorRotation().Yaw));
 }
 
 void Arunchar::calculaterootyawoffset()
@@ -233,7 +232,7 @@ void Arunchar::calculaterootyawoffset()
 	yaw = pc->GetControlRotation().Yaw;
 	yawchangeoverframe = yaw - yawlastframe;
 
-	if (ismoving && !issliding && !iswallrunning)
+	if (ismoving && !issliding && !iswallrunning &&!isziplining)
 	{
 		rootyawoffset = 0;
 		return;
