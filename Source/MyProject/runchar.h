@@ -169,11 +169,12 @@ protected:
 		void delaywallrun2();
 		FTimerHandle upwallrun;
 		void updatewallrun();
-		UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement)
-		float walldirectflip;
 		float oggravscale;
 	public:
+		UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement)
+		float walldirectflip;
 		bool canwallrun;
+		UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement)
 		bool iswallrunning;
 
 //Vault stuff
