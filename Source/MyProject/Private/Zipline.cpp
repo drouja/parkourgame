@@ -49,6 +49,7 @@ void AZipline::Tick(float DeltaTime)
 
 }
 
+#if WITH_EDITOR
 void AZipline::PostEditMove(bool bFinished)
 {
 	Super::PostEditMove(bFinished);
@@ -58,6 +59,7 @@ void AZipline::PostEditMove(bool bFinished)
 		Updatehitbox();
 	}
 }
+#endif
 
 void AZipline::Updatecable()
 {
