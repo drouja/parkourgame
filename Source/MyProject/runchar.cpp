@@ -462,8 +462,9 @@ void Arunchar::updatewallrun()
 			prevcross = cross;
 			cross = UKismetMathLibrary::Cross_VectorVector(wallrunnorm, FVector{ 0,0,walldirectflip });
 			LaunchCharacter(GetVelocity().Size()*cross, true, true);
-			if (!prevcross.Equals(cross, 1))
+			if (!prevcross.Equals(cross, 0))
 			{
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some debug message!"));
 				yaw = (UKismetMathLibrary::MakeRotFromXZ(cross, FVector{ 0,0,1 })).Yaw;
 				calculaterootyawoffset();
 			}
@@ -472,6 +473,7 @@ void Arunchar::updatewallrun()
 	}
 	else
 	{
+		cross = FVector{0,0,300};
 		iswallrunning = false;
 		GetCharacterMovement()->GravityScale = oggravscale;
 		return;
