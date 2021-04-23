@@ -174,6 +174,8 @@ protected:
 		UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement)
 		float walldirectflip;
 		bool canwallrun;
+		FVector prevcross;
+		FVector cross;
 		UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement)
 		bool iswallrunning;
 

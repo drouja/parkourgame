@@ -112,6 +112,7 @@ Arunchar::Arunchar()
 	canwallrun=false;
 	iswallrunning=false;
 	oggravscale = GetCharacterMovement()->GravityScale;
+	cross = FVector{ 0,0,0 };
 	//
 
 	//Component stuff
@@ -198,7 +199,6 @@ void Arunchar::MoveRight(float Value)
 		AddMovementInput(Direction, Value);
 	}
 }
-
 
 void Arunchar::Lookup(float Axisval)
 {
@@ -407,6 +407,7 @@ void Arunchar::delaywallrun1()
 {
 	if (!vaulting)
 	{
+		
 		canwallrun = true;
 		FTimerHandle wallruntime;
 		GetWorldTimerManager().SetTimer(wallruntime, this, &Arunchar::delaywallrun2, 1.2f, false);
@@ -444,9 +445,10 @@ void Arunchar::updatewallrun()
 			GetCharacterMovement()->GravityScale = oggravscale;
 			return;
 		}
-		if (-0.52 <= wallrunnorm.Z && wallrunnorm.Z <= 0.52)
+		if (-0.52 <= wallrunnorm.Z && wallrunnorm.Z <= 0.52) //FVector::DotProduct(wallrunnorm, )
 		{
 			iswallrunning = true;
+			takeyaw = true;
 			if (walldirectflip == 1)
 			{
 				sliderot = normalize360(UKismetMathLibrary::MakeRotFromYZ(wallrunnorm, GetActorUpVector()).Yaw);
@@ -457,7 +459,14 @@ void Arunchar::updatewallrun()
 			}
 			
 			LaunchCharacter(wallrunloc - GetActorLocation(),false,false);
-			LaunchCharacter(GetVelocity().Size()*UKismetMathLibrary::Cross_VectorVector(wallrunnorm, FVector{0,0,walldirectflip}), true, true);
+			prevcross = cross;
+			cross = UKismetMathLibrary::Cross_VectorVector(wallrunnorm, FVector{ 0,0,walldirectflip });
+			LaunchCharacter(GetVelocity().Size()*cross, true, true);
+			if (!prevcross.Equals(cross, 1))
+			{
+				yaw = (UKismetMathLibrary::MakeRotFromXZ(cross, FVector{ 0,0,1 })).Yaw;
+				calculaterootyawoffset();
+			}
 			GetCharacterMovement()->GravityScale = 0;
 		}
 	}
@@ -571,7 +580,6 @@ void Arunchar::Interact()
 	interactbuttondown = true;
 	FTimerHandle butresettime;
 	GetWorldTimerManager().SetTimer(butresettime, this, &Arunchar::UnInteract, 0.5f, false);
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some debug message!"));
 	
 }
 
