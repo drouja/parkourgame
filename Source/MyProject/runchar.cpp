@@ -427,16 +427,20 @@ void Arunchar::updatewallrun()
 		FHitResult outhit;
 		FVector wallrunloc{};
 		FVector wallrunnorm{};
-		if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + -75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
+
+		//Just raycasts for walls
+		if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + -75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
 		{
 			wallrunloc = outhit.Location;
 			wallrunnorm = outhit.Normal;
+			wallrunnorm.Normalize();
 			walldirectflip = 1;
 		}
-		else if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + 75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
+		else if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + 75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
 		{
 			wallrunloc = outhit.Location;
-			wallrunnorm = outhit.Normal;
+			wallrunnorm =outhit.Normal;
+			wallrunnorm.Normalize();
 			walldirectflip = -1;
 		}
 		else
@@ -445,7 +449,13 @@ void Arunchar::updatewallrun()
 			GetCharacterMovement()->GravityScale = oggravscale;
 			return;
 		}
-		if (-0.52 <= wallrunnorm.Z && wallrunnorm.Z <= 0.52) //FVector::DotProduct(wallrunnorm, )
+		//
+
+		FVector playervel = GetVelocity();
+		playervel.Z = 0;
+		double wallcheck = abs(UKismetMathLibrary::Cross_VectorVector(playervel, wallrunnorm).Size());
+		
+		if (-0.52 <= wallrunnorm.Z && wallrunnorm.Z <= 0.52 && 500<wallcheck)
 		{
 			iswallrunning = true;
 			takeyaw = true;
@@ -464,11 +474,16 @@ void Arunchar::updatewallrun()
 			LaunchCharacter(GetVelocity().Size()*cross, true, true);
 			if (!prevcross.Equals(cross, 0))
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some debug message!"));
+				
 				yaw = (UKismetMathLibrary::MakeRotFromXZ(cross, FVector{ 0,0,1 })).Yaw;
 				calculaterootyawoffset();
 			}
 			GetCharacterMovement()->GravityScale = 0;
+		}
+		else
+		{
+			iswallrunning = false;
+			canwallrun = false;
 		}
 	}
 	else
