@@ -360,7 +360,7 @@ void Arunchar::Jump()
 
 		if (FVector::DotProduct(GetActorForwardVector(),GetVelocity())>0.0)
 		{
-		FTimerHandle wallrunstart;
+		
 		sliderv = GetActorRightVector();
 		canwallclimb = true;
 		GetWorldTimerManager().SetTimer(wallrunstart, this, &Arunchar::delaywallrun1, 0.5f, false);
@@ -405,6 +405,10 @@ void Arunchar::Landed(const FHitResult& Hit)
 	}
 	else takeyaw = true;
 	willroll = false;
+
+	GetWorldTimerManager().ClearTimer(wallrunstart);
+	GetWorldTimerManager().ClearTimer(wallruntime);
+	canwallrun = false;
 	
 }
 
@@ -427,7 +431,6 @@ void Arunchar::delaywallrun1()
 	{
 		
 		canwallrun = true;
-		FTimerHandle wallruntime;
 		GetWorldTimerManager().SetTimer(wallruntime, this, &Arunchar::delaywallrun2, 1.2f, false);
 	}
 }

@@ -171,9 +171,14 @@ protected:
 	protected:
 		void delaywallrun1();
 		void delaywallrun2();
+
+		FTimerHandle wallrunstart;
+		FTimerHandle wallruntime;
 		FTimerHandle upwallrun;
+		
 		void updatewallrun();
 		float oggravscale;
+
 	public:
 		UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement)
 		float walldirectflip;
