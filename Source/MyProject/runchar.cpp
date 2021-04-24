@@ -288,7 +288,7 @@ void Arunchar::Crouch()
 void Arunchar::StopCrouch()
 {
 	///for now this is only for coiljump, will later add so you can choose to hold or toggle crouch
-	stopcoiljump();
+	if (coiljump)stopcoiljump();
 
 }
 
@@ -440,7 +440,7 @@ void Arunchar::delaywallrun2()
 void Arunchar::updatewallrun()
 {
 	
-	if (canwallrun && GetCharacterMovement()->IsFalling())
+	if (canwallrun && !coiljump && GetCharacterMovement()->IsFalling())
 	{
 		FHitResult outhit;
 		FVector wallrunloc{};
@@ -475,7 +475,6 @@ void Arunchar::updatewallrun()
 		
 		if (-0.52 <= wallrunnorm.Z && wallrunnorm.Z <= 0.52 && 500<wallcheck)
 		{
-			stopcoiljump();
 			iswallrunning = true;
 			takeyaw = true;
 			if (walldirectflip == 1)
@@ -627,7 +626,7 @@ void Arunchar::UnInteract()
 
 void Arunchar::updatewallclimb()
 {
-	if (!canwallclimb || iswallrunning)
+	if (!canwallclimb || iswallrunning || coiljump)
 	{
 		iswallclimbing = false;
 		wallclimbtime = 0.0f;

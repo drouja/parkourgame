@@ -236,5 +236,4 @@ protected:
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool coiljump;
 		void stopcoiljump();
-
 };
