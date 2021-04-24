@@ -228,5 +228,8 @@ protected:
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool isziplining;
 		Endziplinesignature endoverlapdelegate;
+//Coil jump stuff
+		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+		bool coiljump;
 
 };

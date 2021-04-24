@@ -129,6 +129,9 @@ Arunchar::Arunchar()
 
 	//Zipline
 	isziplining = false;
+
+	//Coiljump
+	coiljump = false;
 }
 
 // Called when the game starts or when spawned
@@ -259,10 +262,10 @@ void Arunchar::Crouch()
 	{
 		endoverlapdelegate.ExecuteIfBound(nullptr,this,nullptr,0);
 	}
-	else if (GetCharacterMovement()->IsFalling() && !willroll)
+	else if (GetCharacterMovement()->IsFalling())
 	{
 
-		
+		coiljump = true;
 		FHitResult Outhit{};
 		if (UKismetSystemLibrary::LineTraceSingle(this, GetMesh()->GetComponentLocation(), GetMesh()->GetComponentLocation() + FVector{ 0,0,-200 }, UEngineTypes::ConvertToTraceType(ECC_Camera),false,actorsToIgnore, EDrawDebugTrace::None,Outhit,true, FLinearColor::Red, FLinearColor::Green, 0.0f))
 		{
@@ -372,6 +375,7 @@ void Arunchar::setisMoving()
 
 void Arunchar::Landed(const FHitResult& Hit)
 {
+	coiljump = false;
 	canvault = true;
 	//Super::OnLanded(Hit); do I need? Can't find function definition
 	if (GetActorLocation().Z-startheight<-900)
