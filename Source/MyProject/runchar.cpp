@@ -344,10 +344,14 @@ void Arunchar::Jump()
 	{
 		Super::Jump();
 		takeyaw = false;
+
+		if (FVector::DotProduct(GetActorForwardVector(),GetVelocity())>0.0)
+		{
 		FTimerHandle wallrunstart;
 		sliderv = GetActorRightVector();
 		canwallclimb = true;
 		GetWorldTimerManager().SetTimer(wallrunstart, this, &Arunchar::delaywallrun1, 0.5f, false);
+		}
 	}
 	else if (iswallrunning)
 	{
