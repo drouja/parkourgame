@@ -22,6 +22,8 @@ class MYPROJECT_API Arunchar : public ACharacter
 	class UChildActorComponent* omnitool;
 	UPROPERTY(EditDefaultsOnly, Category = Omnitool)
 	TSubclassOf<class AOmnitool> omnitoolclass;
+	class UCapsuleComponent* hitb;
+		float hitbheight;
 
 public:
 	// Sets default values for this character's properties
@@ -45,6 +47,8 @@ protected:
 	
 
 	void Crouch();
+
+	void StopCrouch();
 
 	APlayerController* pc;
 
@@ -231,5 +235,6 @@ protected:
 //Coil jump stuff
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool coiljump;
+		void stopcoiljump();
 
 };

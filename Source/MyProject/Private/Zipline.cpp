@@ -86,6 +86,7 @@ void AZipline::BeginOverlap(UPrimitiveComponent* OverlappedComponent,
 	asrunchar = Cast<Arunchar>(OtherActor);
 	if (asrunchar != nullptr)
 	{
+		asrunchar->stopcoiljump();
 		asrunchar->isziplining = true;
 		asrunchar->endoverlapdelegate.BindUObject(this, &AZipline::EndOverlap);
 		FRotator lookrot = UKismetMathLibrary::FindLookAtRotation(spline->GetLocationAtSplinePoint(1, ESplineCoordinateSpace::World), spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World));

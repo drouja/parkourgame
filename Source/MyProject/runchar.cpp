@@ -121,6 +121,8 @@ Arunchar::Arunchar()
 	omnitool = CreateDefaultSubobject<UChildActorComponent>("Omnitool");
 	omnitool->SetChildActorClass(omnitoolclass);
 	omnitool->SetupAttachment(GetMesh(), FName("LeftForeArm"));
+	hitb = GetCapsuleComponent();
+	hitbheight = hitb->GetUnscaledCapsuleHalfHeight(); //May cause issues later, figure out to use unscaled or scaled?
 
 	//Wallclimb
 	maxclimbtime = 0.4;
@@ -150,8 +152,6 @@ void Arunchar::BeginPlay()
 	origfrict = GetCharacterMovement()->GroundFriction;
 	origcrouchspeed = GetCharacterMovement()->MaxWalkSpeedCrouched;
 	pc=GEngine->GetFirstLocalPlayerController(GetWorld());
-
-
 }
 
 // Called every frame
@@ -171,6 +171,7 @@ void Arunchar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("LookUp", this, &Arunchar::Lookup);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &Arunchar::Jump);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &Arunchar::Crouch);
+	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &Arunchar::StopCrouch);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &Arunchar::Interact);
 }
 
@@ -258,7 +259,7 @@ void Arunchar::Crouch()
 {
 	if (!takecrouch) return;
 	if (GetCharacterMovement()->IsCrouching()) ACharacter::UnCrouch();
-	if (isziplining)
+	else if (isziplining)
 	{
 		endoverlapdelegate.ExecuteIfBound(nullptr,this,nullptr,0);
 	}
@@ -266,6 +267,8 @@ void Arunchar::Crouch()
 	{
 
 		coiljump = true;
+		hitb->SetCapsuleHalfHeight(hitbheight/2);
+		
 		FHitResult Outhit{};
 		if (UKismetSystemLibrary::LineTraceSingle(this, GetMesh()->GetComponentLocation(), GetMesh()->GetComponentLocation() + FVector{ 0,0,-200 }, UEngineTypes::ConvertToTraceType(ECC_Camera),false,actorsToIgnore, EDrawDebugTrace::None,Outhit,true, FLinearColor::Red, FLinearColor::Green, 0.0f))
 		{
@@ -280,6 +283,13 @@ void Arunchar::Crouch()
 		Startslide();
 	}
 	
+}
+
+void Arunchar::StopCrouch()
+{
+	///for now this is only for coiljump, will later add so you can choose to hold or toggle crouch
+	stopcoiljump();
+
 }
 
 void Arunchar::Startslide()
@@ -375,7 +385,7 @@ void Arunchar::setisMoving()
 
 void Arunchar::Landed(const FHitResult& Hit)
 {
-	coiljump = false;
+	stopcoiljump();
 	canvault = true;
 	//Super::OnLanded(Hit); do I need? Can't find function definition
 	if (GetActorLocation().Z-startheight<-900)
@@ -465,6 +475,7 @@ void Arunchar::updatewallrun()
 		
 		if (-0.52 <= wallrunnorm.Z && wallrunnorm.Z <= 0.52 && 500<wallcheck)
 		{
+			stopcoiljump();
 			iswallrunning = true;
 			takeyaw = true;
 			if (walldirectflip == 1)
@@ -509,6 +520,7 @@ void Arunchar::vaultupdate()
 {
 	if (vaulting)
 	{
+		stopcoiljump();
 		FHitResult outhit;
 		if (!(UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() -37* GetActorForwardVector() - FVector{0,0,20}, GetActorLocation() - FVector{0,0,20 } + GetActorForwardVector() * 200, FVector(5, 5, 20), GetActorRotation(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)))
 		{
@@ -643,4 +655,10 @@ void Arunchar::updatewallclimb()
 		LaunchCharacter(wallclimbloc-actorloc,false,false);
 		LaunchCharacter(FVector{ 0,0,wallclimbforce }, false, true);
 	}
+}
+
+void Arunchar::stopcoiljump()
+{
+	coiljump = false;
+	hitb->SetCapsuleHalfHeight(hitbheight);
 }
