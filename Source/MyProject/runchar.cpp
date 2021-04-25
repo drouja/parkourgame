@@ -362,7 +362,6 @@ void Arunchar::Jump()
 
 		if (FVector::DotProduct(GetActorForwardVector(),GetVelocity())>0.0)
 		{
-		
 		sliderv = GetActorRightVector();
 		canwallclimb = true;
 		GetWorldTimerManager().SetTimer(wallrunstart, this, &Arunchar::delaywallrun1, 0.5f, false);
@@ -379,10 +378,10 @@ void Arunchar::Jump()
 
 void Arunchar::UnSpace()
 {
+	canwallclimb = false;
 	if (iswallclimbing)
 	{
 		LaunchCharacter(FVector{ 0,0,30 }, true, true);
-		canwallclimb = false;
 	}
 	
 }
@@ -643,6 +642,31 @@ void Arunchar::UnInteract()
 
 void Arunchar::updatewallclimb()
 {
+	//Dont wallclimb if quickturning
+	if (isquickturning) return;
+
+	//Raycasting for wall
+	FVector actorloc = GetActorLocation();
+	FVector actorup = GetActorUpVector();
+	FVector aimvector = 70 * normalizevector(FVector{ FollowCamera->GetForwardVector().X,FollowCamera->GetForwardVector().Y,0 });
+	FHitResult Outhit{};
+	FHitResult Outhit2{};
+	bool wallcast = UKismetSystemLibrary::LineTraceSingle(this, actorloc + 80 * actorup, actorloc + 80 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)
+		&&
+		UKismetSystemLibrary::LineTraceSingle(this, actorloc - 100 * actorup, actorloc - 100 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit2, true, FLinearColor::Red, FLinearColor::Green, 0.0f);
+	//
+
+	//Allowing quickturn
+	if (!wallcast)
+	{
+		iswallclimbing = false;
+		canquickturn = false;
+		return;
+	}
+	else canquickturn = true;
+	//
+	
+	//Disable wallclimbing if either wallclimbing for too long, or doing some other action
 	if (!canwallclimb || iswallrunning || coiljump)
 	{
 		iswallclimbing = false;
@@ -655,23 +679,15 @@ void Arunchar::updatewallclimb()
 		canwallclimb = false;
 		return;
 	}
+	//
+	
+	//Wallclimb
 	wallclimbtime += 0.005f;
-
-	FVector actorloc = GetActorLocation();
-	FVector actorup = GetActorUpVector();
-	FVector aimvector=70*normalizevector(FVector{FollowCamera->GetForwardVector().X,FollowCamera->GetForwardVector().Y,0});
-	FHitResult Outhit{};
-	FHitResult Outhit2{};
-	if (UKismetSystemLibrary::LineTraceSingle(this, actorloc + 80 * actorup, actorloc + 80 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)
-		&&
-		UKismetSystemLibrary::LineTraceSingle(this, actorloc - 100 * actorup, actorloc - 100 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit2, true, FLinearColor::Red, FLinearColor::Green, 0.0f)
-		)
-	{
-		iswallclimbing = true;
-		FVector wallclimbloc = { Outhit.Location.X,Outhit.Location.Y,actorloc.Z };
-		LaunchCharacter(wallclimbloc-actorloc,false,false);
-		LaunchCharacter(FVector{ 0,0,wallclimbforce }, false, true);
-	}
+	iswallclimbing = true;
+	FVector wallclimbloc = { Outhit.Location.X,Outhit.Location.Y,actorloc.Z };
+	LaunchCharacter(wallclimbloc-actorloc,false,false);
+	LaunchCharacter(FVector{ 0,0,wallclimbforce }, false, true);
+	//
 }
 
 void Arunchar::stopcoiljump()
@@ -682,9 +698,10 @@ void Arunchar::stopcoiljump()
 
 void Arunchar::quickturn()
 {
-	if (iswallclimbing)
+	if (canquickturn)
 	{
 		canwallclimb = false;
+		iswallclimbing = false;
 		pc->SetControlRotation(FRotator{0,GetControlRotation().Yaw+180, GetControlRotation().Roll});
 		calculaterootyawoffset();
 		isquickturning = true;

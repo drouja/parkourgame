@@ -241,6 +241,7 @@ protected:
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool isquickturning;
 		void holdonwall();
+		bool canquickturn;
 //Zipline stuff
 		void setgrav(bool resetgrav = false, float newgrav = 0.0f);
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
