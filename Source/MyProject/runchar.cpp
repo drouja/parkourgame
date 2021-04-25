@@ -379,7 +379,12 @@ void Arunchar::Jump()
 
 void Arunchar::UnSpace()
 {
-	canwallclimb = false;
+	if (iswallclimbing)
+	{
+		LaunchCharacter(FVector{ 0,0,30 }, true, true);
+		canwallclimb = false;
+	}
+	
 }
 
 void Arunchar::Falling()
