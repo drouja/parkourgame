@@ -355,7 +355,7 @@ void Arunchar::Endslide()
 void Arunchar::Jump()
 {
 	
-	if (takejump && !GetCharacterMovement()->IsFalling())
+	if (takejump && !GetCharacterMovement()->IsFalling() && !bIsCrouched)
 	{
 		Super::Jump();
 		takeyaw = false;
@@ -605,7 +605,7 @@ void Arunchar::updatewallblock()
 	righthandwallblock = false;
 	lefthandwallblock = false;
 
-	if (!pc->IsInputKeyDown(EKeys::W) || vaultanim || iswallclimbing || GetCharacterMovement()->IsFalling()) return;
+	if (!pc->IsInputKeyDown(EKeys::W) || vaultanim || iswallclimbing) return;
 
 	FVector rightsocketloc = GetMesh() -> GetSocketLocation(FName("RightShoulderSocket"));
 	FVector leftsocketloc = GetMesh()->GetSocketLocation(FName("LeftShoulderSocket"));
