@@ -44,7 +44,7 @@ protected:
 
 	void Turn(float Axisval);
 
-	
+	void UnSpace();
 
 	void Crouch();
 

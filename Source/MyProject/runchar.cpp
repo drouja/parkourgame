@@ -171,6 +171,7 @@ void Arunchar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("Turn", this, &Arunchar::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &Arunchar::Lookup);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &Arunchar::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &Arunchar::UnSpace);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &Arunchar::Crouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &Arunchar::StopCrouch);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &Arunchar::Interact);
@@ -351,7 +352,6 @@ void Arunchar::Endslide()
 }
 //------------------------
 
-
 void Arunchar::Jump()
 {
 	
@@ -375,6 +375,11 @@ void Arunchar::Jump()
 		ACharacter::LaunchCharacter(500*(FollowCamera->GetForwardVector()+FollowCamera->GetUpVector()),true,true);
 		canwallrun = false;
 	}
+}
+
+void Arunchar::UnSpace()
+{
+	canwallclimb = false;
 }
 
 void Arunchar::Falling()
@@ -639,8 +644,9 @@ void Arunchar::updatewallclimb()
 		wallclimbtime = 0.0f;
 		return;
 	}
-	if (wallclimbtime >= maxclimbtime)
+	if (wallclimbtime >= maxclimbtime && iswallclimbing)
 	{
+		LaunchCharacter(FVector{ 0,0,10 }, true, true);
 		canwallclimb = false;
 		return;
 	}
@@ -648,7 +654,7 @@ void Arunchar::updatewallclimb()
 
 	FVector actorloc = GetActorLocation();
 	FVector actorup = GetActorUpVector();
-	FVector aimvector=60*normalizevector(FVector{FollowCamera->GetForwardVector().X,FollowCamera->GetForwardVector().Y,0});
+	FVector aimvector=70*normalizevector(FVector{FollowCamera->GetForwardVector().X,FollowCamera->GetForwardVector().Y,0});
 	FHitResult Outhit{};
 	FHitResult Outhit2{};
 	if (UKismetSystemLibrary::LineTraceSingle(this, actorloc + 80 * actorup, actorloc + 80 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)
@@ -674,7 +680,7 @@ void Arunchar::quickturn()
 	if (iswallclimbing)
 	{
 		canwallclimb = false;
-		pc->SetControlRotation(FRotator{ GetControlRotation().Pitch,GetControlRotation().Yaw+180, GetControlRotation().Roll});
+		pc->SetControlRotation(FRotator{0,GetControlRotation().Yaw+180, GetControlRotation().Roll});
 		calculaterootyawoffset();
 		isquickturning = true;
 		holdtime = 0;
