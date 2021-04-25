@@ -22,7 +22,6 @@
 //Helper functions
 
 
-
 FVector Arunchar::Setslidevector()
 {
 	FHitResult Outhit{};
@@ -128,6 +127,8 @@ Arunchar::Arunchar()
 	maxclimbtime = 0.4;
 	wallclimbtime = 0.0f;
 	wallclimbforce = 300.0f;
+	maxholdtime = 0.5f;
+	isquickturning = false;
 
 	//Zipline
 	isziplining = false;
@@ -173,6 +174,7 @@ void Arunchar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &Arunchar::Crouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &Arunchar::StopCrouch);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &Arunchar::Interact);
+	PlayerInputComponent->BindAction("Quickturn", IE_Pressed, this, &Arunchar::quickturn);
 }
 
 void Arunchar::MoveForward(float Value)
@@ -366,8 +368,10 @@ void Arunchar::Jump()
 		GetWorldTimerManager().SetTimer(wallrunstart, this, &Arunchar::delaywallrun1, 0.5f, false);
 		}
 	}
-	else if (iswallrunning)
+	else if (iswallrunning || isquickturning)
 	{
+		GetWorldTimerManager().ClearTimer(delayfall);
+		isquickturning = false;
 		ACharacter::LaunchCharacter(500*(FollowCamera->GetForwardVector()+FollowCamera->GetUpVector()),true,true);
 		canwallrun = false;
 	}
@@ -644,7 +648,7 @@ void Arunchar::updatewallclimb()
 
 	FVector actorloc = GetActorLocation();
 	FVector actorup = GetActorUpVector();
-	FVector aimvector=50*normalizevector(FVector{FollowCamera->GetForwardVector().X,FollowCamera->GetForwardVector().Y,0});
+	FVector aimvector=60*normalizevector(FVector{FollowCamera->GetForwardVector().X,FollowCamera->GetForwardVector().Y,0});
 	FHitResult Outhit{};
 	FHitResult Outhit2{};
 	if (UKismetSystemLibrary::LineTraceSingle(this, actorloc + 80 * actorup, actorloc + 80 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)
@@ -663,4 +667,30 @@ void Arunchar::stopcoiljump()
 {
 	coiljump = false;
 	hitb->SetCapsuleHalfHeight(hitbheight);
+}
+
+void Arunchar::quickturn()
+{
+	if (iswallclimbing)
+	{
+		canwallclimb = false;
+		pc->SetControlRotation(FRotator{ GetControlRotation().Pitch,GetControlRotation().Yaw+180, GetControlRotation().Roll});
+		calculaterootyawoffset();
+		isquickturning = true;
+		holdtime = 0;
+		GetWorldTimerManager().SetTimer(delayfall, this, &Arunchar::holdonwall, 0.005f, true);
+	}
+}
+
+void Arunchar::holdonwall()
+{
+	if (holdtime >= maxholdtime)
+	{
+		GetWorldTimerManager().ClearTimer(delayfall);
+		isquickturning = false;
+		return;
+	}
+	LaunchCharacter(FVector{ 0,0,-1 }, true, true);
+	holdtime += 0.005f;
+	
 }

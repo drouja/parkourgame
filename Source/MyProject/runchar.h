@@ -232,6 +232,15 @@ protected:
 		float wallclimbforce;
 		void updatewallclimb();
 		FTimerHandle updatewallclimbhandle;
+//Quickturn stuff
+		void quickturn();
+		FTimerHandle delayfall; //setgravityscale not working????????
+		float holdtime;
+		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
+		float maxholdtime;
+		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+		bool isquickturning;
+		void holdonwall();
 //Zipline stuff
 		void setgrav(bool resetgrav = false, float newgrav = 0.0f);
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
