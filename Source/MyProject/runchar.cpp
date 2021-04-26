@@ -613,7 +613,7 @@ void Arunchar::updatewallblock()
 	righthandwallblock = false;
 	lefthandwallblock = false;
 
-	if (!pc->IsInputKeyDown(EKeys::W) || vaultanim || iswallclimbing) return;
+	if (!pc->IsInputKeyDown(EKeys::W) || vaultanim || iswallclimbing || isquickturning) return;
 
 	FVector rightsocketloc = GetMesh() -> GetSocketLocation(FName("RightShoulderSocket"));
 	FVector leftsocketloc = GetMesh()->GetSocketLocation(FName("LeftShoulderSocket"));
@@ -707,7 +707,7 @@ void Arunchar::stopcoiljump()
 
 void Arunchar::quickturn()
 {
-	if (canquickturn)
+	if (canquickturn && !isquickturning)
 	{
 		canwallclimb = false;
 		iswallclimbing = false;
