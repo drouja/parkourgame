@@ -242,6 +242,13 @@ protected:
 		bool isquickturning;
 		void holdonwall();
 		bool canquickturn;
+		
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
+		UAnimMontage* Wallturn;
+		FOnMontageEnded wallturndelegate;
+
+		void endquickturn(UAnimMontage* mont, bool interupted);
+
 //Zipline stuff
 		void setgrav(bool resetgrav = false, float newgrav = 0.0f);
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)

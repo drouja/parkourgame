@@ -129,6 +129,7 @@ Arunchar::Arunchar()
 	wallclimbforce = 300.0f;
 	maxholdtime = 0.5f;
 	isquickturning = false;
+	wallturndelegate.BindUObject(this, &Arunchar::endquickturn);
 
 	//Zipline
 	isziplining = false;
@@ -153,6 +154,7 @@ void Arunchar::BeginPlay()
 	origfrict = GetCharacterMovement()->GroundFriction;
 	origcrouchspeed = GetCharacterMovement()->MaxWalkSpeedCrouched;
 	pc=GEngine->GetFirstLocalPlayerController(GetWorld());
+	Wallturn->bEnableAutoBlendOut = false;
 }
 
 // Called every frame
@@ -210,8 +212,8 @@ void Arunchar::MoveRight(float Value)
 void Arunchar::Lookup(float Axisval)
 {
 	if (takepitch)
-	{
-		AddControllerPitchInput(sensitivity*Axisval* (GetWorld()->GetDeltaSeconds() * (1 / GetActorTimeDilation())));
+	{ //For now, add this inversion to lookup when quickturning until find better way?
+		AddControllerPitchInput((isquickturning? -1 : 1)*sensitivity*Axisval* (GetWorld()->GetDeltaSeconds() * (1 / GetActorTimeDilation())));
 	}
 	pitch = UKismetMathLibrary::NormalizeAxis(GetControlRotation().Pitch - GetActorRotation().Pitch);
 }
@@ -369,6 +371,13 @@ void Arunchar::Jump()
 	}
 	else if (iswallrunning || isquickturning)
 	{
+		if (isquickturning)
+		{
+			yaw = pc->GetControlRotation().Yaw + 180;
+			pc->SetControlRotation(FRotator{ -1 * pitch,yaw,0 });
+			calculaterootyawoffset();
+		}
+		StopAnimMontage(Wallturn);
 		GetWorldTimerManager().ClearTimer(delayfall);
 		isquickturning = false;
 		ACharacter::LaunchCharacter(500*(FollowCamera->GetForwardVector()+FollowCamera->GetUpVector()),true,true);
@@ -702,8 +711,14 @@ void Arunchar::quickturn()
 	{
 		canwallclimb = false;
 		iswallclimbing = false;
-		pc->SetControlRotation(FRotator{0,GetControlRotation().Yaw+180, GetControlRotation().Roll});
-		calculaterootyawoffset();
+
+		//Animation stuff
+		pc->SetControlRotation(FRotator{0,yaw, 0 });
+		PlayAnimMontage(Wallturn);
+		GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(wallturndelegate, Wallturn);
+		FollowCamera->bUsePawnControlRotation = 0;
+		//
+
 		isquickturning = true;
 		holdtime = 0;
 		GetWorldTimerManager().SetTimer(delayfall, this, &Arunchar::holdonwall, 0.005f, true);
@@ -714,11 +729,21 @@ void Arunchar::holdonwall()
 {
 	if (holdtime >= maxholdtime)
 	{
+		yaw = pc->GetControlRotation().Yaw + 180;
+		pc->SetControlRotation(FRotator{ -1 * pitch,yaw, 0});
+		calculaterootyawoffset();
+		StopAnimMontage(Wallturn);
 		GetWorldTimerManager().ClearTimer(delayfall);
 		isquickturning = false;
 		return;
 	}
 	LaunchCharacter(FVector{ 0,0,-1 }, true, true);
 	holdtime += 0.005f;
+	
+}
+
+void Arunchar::endquickturn(UAnimMontage* mont, bool interupted)
+{
+	FollowCamera->bUsePawnControlRotation = 1;
 	
 }
