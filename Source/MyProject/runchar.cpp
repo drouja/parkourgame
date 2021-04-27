@@ -551,7 +551,7 @@ void Arunchar::vaultupdate()
 		FHitResult outhit;
 		(UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() - 37 * GetActorForwardVector() - FVector{ 0,0,20 }, GetActorLocation() - FVector{ 0,0,20 } + GetActorForwardVector() * 200, FVector(5, 5, 20), GetActorRotation(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f));
 		//Stop vaulting once cleared obstacle
-		if (!outhit.bBlockingHit || outhit.Actor!=remcollisonactor)
+		if (!outhit.bBlockingHit || outhit.Actor!=remcollisonactor) //Check if the actor we've hit with the trace is the actor we're vaulting over
 		{
 			vaulting = false; 
 			MoveIgnoreActorRemove(remcollisonactor);
@@ -575,7 +575,25 @@ void Arunchar::vaultupdate()
 		return;
 	}
 
+	checkifledgeclimb();
 	checkfvault(); //Check if can do foward vault over obstacle
+}
+
+void Arunchar::checkifledgeclimb()
+{
+	FVector charvel = GetVelocity();
+	FVector charloc = GetActorLocation();
+	FVector FV = 50 * GetActorForwardVector();
+	FRotator rot = GetActorRotation();
+	FHitResult outhit;
+	if (charvel.Z>20*(abs(charvel.X)+ abs(charvel.Y))
+	&&
+		!UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{0,0,70}, charloc + FVector{ 0,0,70 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
+	&&
+		UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,50 }, charloc + FVector{ 0,0,50 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
+	&&
+		UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,30 }, charloc + FVector{ 0,0,30 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
+		) GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Yellow, TEXT("Some debug message!"));
 }
 
 void Arunchar::checkfvault()
