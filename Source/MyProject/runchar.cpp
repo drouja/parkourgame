@@ -549,9 +549,10 @@ void Arunchar::vaultupdate()
 		stopcoiljump();
 
 		FHitResult outhit;
+		(UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() - 37 * GetActorForwardVector() - FVector{ 0,0,20 }, GetActorLocation() - FVector{ 0,0,20 } + GetActorForwardVector() * 200, FVector(5, 5, 20), GetActorRotation(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f));
 		//Stop vaulting once cleared obstacle
-		if (!(UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() -37* GetActorForwardVector() - FVector{0,0,20}, GetActorLocation() - FVector{0,0,20 } + GetActorForwardVector() * 200, FVector(5, 5, 20), GetActorRotation(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)))
-		{			
+		if (!outhit.bBlockingHit || outhit.Actor!=remcollisonactor)
+		{
 			vaulting = false; 
 			MoveIgnoreActorRemove(remcollisonactor);
 			takeyaw = true;
@@ -568,48 +569,60 @@ void Arunchar::vaultupdate()
 	}
 
 	//If we aren't in the air, wallrunning, have negative z velocity, or are too slow/at weird angle, don't vault
-	if (!GetCharacterMovement()->IsFalling() || iswallrunning || GetVelocity().Z < -1 || UKismetMathLibrary::Dot_VectorVector(normalizevector(GetVelocity()), GetActorForwardVector()) < 0.4)
+	if (!GetCharacterMovement()->IsFalling() || iswallrunning)
 	{
 		vaulting = false;
 		return;
 	}
 
+	checkfvault(); //Check if can do foward vault over obstacle
+}
+
+void Arunchar::checkfvault()
+{
 	//Check if object in front and if we can vault over it
 	FHitResult outhit;
 	FHitResult outhit2;
 	FHitResult outhit3;
-	if (UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() + FVector{ 0,0,20 }, GetActorLocation() + FVector{ 0,0,20 } + GetActorForwardVector() * 200, FVector(10, 10, 20), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f) && 
+	if (!(GetVelocity().Z < -1) && !(UKismetMathLibrary::Dot_VectorVector(normalizevector(GetVelocity()), GetActorForwardVector()) < 0.4) &&
+		UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() + FVector{ 0,0,20 }, GetActorLocation() + FVector{ 0,0,20 } + GetActorForwardVector() * 200, FVector(10, 10, 20), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f) &&
 		!UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() + FVector{ 0,0,80 }, GetActorLocation() + FVector{ 0,0,80 } + GetActorForwardVector() * 200, FVector(10, 10, 40), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit2, true, FLinearColor::Red, FLinearColor::Red, 0.0f)
 		)
 	{
-		if (UKismetSystemLibrary::LineTraceSingle(this, outhit.Location+ FVector{ 0,0,50 } - 15*outhit.Normal, outhit.Location + FVector{ 0,0,-30 } - 15 * outhit.Normal, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit2, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
+		if (UKismetSystemLibrary::LineTraceSingle(this, outhit.Location + FVector{ 0,0,50 } - 15 * outhit.Normal, outhit.Location + FVector{ 0,0,-30 } - 15 * outhit.Normal, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit2, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
 			&&
 			!UKismetSystemLibrary::BoxTraceSingle(this, outhit.Location + FVector{ 0,0,-50 } - 150 * outhit.Normal, outhit.Location + FVector{ 0,0,-50 } - 300 * outhit.Normal, FVector(10, 10, 40), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit3, true, FLinearColor::Red, FLinearColor::Red, 0.0f)
 			)
 		{
 
-		StopJumping();
-		vaultloc = outhit2.Location; //Used for hand Ik, and for determening where to move character
-		vaulting = true;
-		vaultanim = true;
-		canwallrun = false;
-		
-		//Disable some mouse inputs
-		takeyaw = false;
-		takews = false;
-		takead = false;
-		//-------------------------
-		vaulttime = 0;
-		//Setupmontage end delegate
-		PlayAnimMontage(vault1);
-		GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(vaultenddelegate, vault1);
-		remcollisonactor = outhit.GetActor();
-		MoveIgnoreActorAdd(remcollisonactor);
-		//-------------------------
+			StopJumping();
+			vaultloc = outhit2.Location; //Used for hand Ik, and for determening where to move character
+			vaulting = true;
+			vaultanim = true;
+			canwallrun = false;
+
+			//Disable some mouse inputs
+			takeyaw = false;
+			takews = false;
+			takead = false;
+			//-------------------------
+			vaulttime = 0;
+			//Setupmontage end delegate
+			PlayAnimMontage(vault1);
+			GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(vaultenddelegate, vault1);
+			remcollisonactor = outhit.GetActor();
+			MoveIgnoreActorAdd(remcollisonactor);
+			//-------------------------
 
 		}
-		
-		
+		else
+		{
+			vaulting = false;
+		}
+	}
+	else
+	{
+		vaulting = false;
 	}
 }
 

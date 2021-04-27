@@ -197,6 +197,7 @@ protected:
 		FVector vaultloc;
 		AActor* remcollisonactor;
 		void vaultupdate();
+		void checkfvault();
 		FTimerHandle updatevaulthandle;
 		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 			UAnimMontage* vault1;
