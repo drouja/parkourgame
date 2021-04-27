@@ -189,7 +189,6 @@ protected:
 		bool iswallrunning;
 
 //Vault stuff
-		bool canvault;
 		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animations)
 		bool vaultanim;
 		bool vaulting;
