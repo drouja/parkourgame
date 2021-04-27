@@ -258,4 +258,8 @@ protected:
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool coiljump;
 		void stopcoiljump();
+//Ledgeclimb stuff
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
+		UAnimMontage* Ledgeclimb;
+		bool isledgeclimbing;
 };

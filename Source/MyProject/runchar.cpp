@@ -100,7 +100,6 @@ Arunchar::Arunchar()
 	landenddelegate.BindUObject(this, &Arunchar::OnFallAnimationEnded);
 	
 	//vault
-	canvault = true;
 	vaulting = false;
 	vaultenddelegate.BindUObject(this, &Arunchar::endvault);
 	//
@@ -136,6 +135,9 @@ Arunchar::Arunchar()
 
 	//Coiljump
 	coiljump = false;
+
+	//Ledgegrab/climb
+	isledgeclimbing = false;
 }
 
 // Called when the game starts or when spawned
@@ -408,7 +410,6 @@ void Arunchar::setisMoving()
 void Arunchar::Landed(const FHitResult& Hit)
 {
 	stopcoiljump();
-	canvault = true;
 	//Super::OnLanded(Hit); do I need? Can't find function definition
 	if (GetActorLocation().Z-startheight<-900)
 	{
@@ -542,29 +543,38 @@ void Arunchar::updatewallrun()
 
 void Arunchar::vaultupdate()
 {
+	//Logic while vaulting animation
 	if (vaulting)
 	{
 		stopcoiljump();
+
 		FHitResult outhit;
+		//Stop vaulting once cleared obstacle
 		if (!(UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() -37* GetActorForwardVector() - FVector{0,0,20}, GetActorLocation() - FVector{0,0,20 } + GetActorForwardVector() * 200, FVector(5, 5, 20), GetActorRotation(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)))
-		{
-			vaulting = false;
+		{			
+			vaulting = false; 
 			MoveIgnoreActorRemove(remcollisonactor);
 			takeyaw = true;
 			takews = true;
 			takead = true;
 		}
-		else
+		// If the vaulting object is below us, keep moving forward
+		else 
 		{
 		vaulttime += 0.005f;
 		SetActorLocation(FVector{GetActorLocation().X,GetActorLocation().Y, UKismetMathLibrary::FInterpTo(GetActorLocation().Z,vaultloc.Z,vaulttime,.8f) });
 		}
 		return;
 	}
-	if (!canvault || !GetCharacterMovement()->IsFalling() || iswallrunning) return;
 
-	if (GetVelocity().Z < -1 || UKismetMathLibrary::Dot_VectorVector(normalizevector(GetVelocity()), GetActorForwardVector()) < 0.4) return;
+	//If we aren't in the air, wallrunning, have negative z velocity, or are too slow/at weird angle, don't vault
+	if (!GetCharacterMovement()->IsFalling() || iswallrunning || GetVelocity().Z < -1 || UKismetMathLibrary::Dot_VectorVector(normalizevector(GetVelocity()), GetActorForwardVector()) < 0.4)
+	{
+		vaulting = false;
+		return;
+	}
 
+	//Check if object in front and if we can vault over it
 	FHitResult outhit;
 	FHitResult outhit2;
 	FHitResult outhit3;
@@ -579,17 +589,17 @@ void Arunchar::vaultupdate()
 		{
 
 		StopJumping();
-		vaultloc = outhit2.Location;
+		vaultloc = outhit2.Location; //Used for hand Ik, and for determening where to move character
 		vaulting = true;
 		vaultanim = true;
-		canvault = false;
 		canwallrun = false;
+		
+		//Disable some mouse inputs
 		takeyaw = false;
 		takews = false;
 		takead = false;
+		//-------------------------
 		vaulttime = 0;
-
-
 		//Setupmontage end delegate
 		PlayAnimMontage(vault1);
 		GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(vaultenddelegate, vault1);
@@ -652,7 +662,7 @@ void Arunchar::UnInteract()
 void Arunchar::updatewallclimb()
 {
 	//Dont wallclimb if quickturning
-	if (isquickturning) return;
+	if (isquickturning || isledgeclimbing || isledgeclimbing) return;
 
 	//Raycasting for wall
 	FVector actorloc = GetActorLocation();
@@ -660,13 +670,12 @@ void Arunchar::updatewallclimb()
 	FVector aimvector = 70 * normalizevector(FVector{ FollowCamera->GetForwardVector().X,FollowCamera->GetForwardVector().Y,0 });
 	FHitResult Outhit{};
 	FHitResult Outhit2{};
-	bool wallcast = UKismetSystemLibrary::LineTraceSingle(this, actorloc + 80 * actorup, actorloc + 80 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)
-		&&
-		UKismetSystemLibrary::LineTraceSingle(this, actorloc - 100 * actorup, actorloc - 100 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit2, true, FLinearColor::Red, FLinearColor::Green, 0.0f);
+	bool wallcheck =UKismetSystemLibrary::LineTraceSingle(this, actorloc + 80 * actorup, actorloc + 80 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f) &&
+	UKismetSystemLibrary::LineTraceSingle(this, actorloc - 100 * actorup, actorloc - 100 * actorup + aimvector, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit2, true, FLinearColor::Red, FLinearColor::Green, 0.0f);
 	//
 
 	//Allowing quickturn
-	if (!wallcast)
+	if (!wallcheck)
 	{
 		iswallclimbing = false;
 		canquickturn = false;
