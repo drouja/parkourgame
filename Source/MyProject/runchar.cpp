@@ -599,6 +599,7 @@ void Arunchar::checkifledgeclimb()
 		UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,25 }, charloc + FVector{ 0,0,25 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
 		)
 	{
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 		PlayAnimMontage(Ledgeclimb);
 		isledgeclimbing = true;
@@ -658,11 +659,10 @@ void Arunchar::checkfvault()
 
 void Arunchar::endledgeclimb(UAnimMontage* mont, bool interupted)
 {
+	MoveIgnoreActorRemove(remcollisonactor);
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	isledgeclimbing = false;
-	MoveIgnoreActorRemove(remcollisonactor);
 	Allowalli();
-	PlayAnimMontage(CrouchtoStand);
 }
 
 void Arunchar::endvault(UAnimMontage* mont, bool interupted)
