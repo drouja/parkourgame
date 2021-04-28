@@ -138,6 +138,7 @@ Arunchar::Arunchar()
 
 	//Ledgegrab/climb
 	isledgeclimbing = false;
+	endledgeclimbdelegate.BindUObject(this, &Arunchar::endledgeclimb);
 }
 
 // Called when the game starts or when spawned
@@ -544,6 +545,7 @@ void Arunchar::updatewallrun()
 void Arunchar::vaultupdate()
 {
 	//Logic while vaulting animation
+	if (isledgeclimbing) return;
 	if (vaulting)
 	{
 		stopcoiljump();
@@ -576,6 +578,8 @@ void Arunchar::vaultupdate()
 	}
 
 	checkifledgeclimb();
+	if (isledgeclimbing) return;
+
 	checkfvault(); //Check if can do foward vault over obstacle
 }
 
@@ -586,14 +590,22 @@ void Arunchar::checkifledgeclimb()
 	FVector FV = 50 * GetActorForwardVector();
 	FRotator rot = GetActorRotation();
 	FHitResult outhit;
-	if (charvel.Z>20*(abs(charvel.X)+ abs(charvel.Y))
-	&&
-		!UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{0,0,70}, charloc + FVector{ 0,0,70 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
-	&&
-		UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,50 }, charloc + FVector{ 0,0,50 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
-	&&
-		UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,30 }, charloc + FVector{ 0,0,30 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
-		) GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Yellow, TEXT("Some debug message!"));
+	if (abs(charvel.Z) > 20 * (abs(charvel.X) + abs(charvel.Y))
+		&&
+		!UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,65 }, charloc + FVector{ 0,0,65 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
+		&&
+		UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,45 }, charloc + FVector{ 0,0,45 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
+		&&
+		UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,25 }, charloc + FVector{ 0,0,25 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
+		)
+	{
+		GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+		PlayAnimMontage(Ledgeclimb);
+		isledgeclimbing = true;
+		remcollisonactor = outhit.GetActor();
+		MoveIgnoreActorAdd(remcollisonactor);
+		GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(endledgeclimbdelegate, Ledgeclimb);
+	}
 }
 
 void Arunchar::checkfvault()
@@ -642,6 +654,15 @@ void Arunchar::checkfvault()
 	{
 		vaulting = false;
 	}
+}
+
+void Arunchar::endledgeclimb(UAnimMontage* mont, bool interupted)
+{
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	isledgeclimbing = false;
+	MoveIgnoreActorRemove(remcollisonactor);
+	Allowalli();
+	PlayAnimMontage(CrouchtoStand);
 }
 
 void Arunchar::endvault(UAnimMontage* mont, bool interupted)

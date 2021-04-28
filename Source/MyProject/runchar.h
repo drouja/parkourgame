@@ -263,4 +263,8 @@ protected:
 		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 		UAnimMontage* Ledgeclimb;
 		bool isledgeclimbing;
+		FOnMontageEnded endledgeclimbdelegate;
+		void endledgeclimb(UAnimMontage* mont, bool interupted);
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
+		UAnimMontage* CrouchtoStand;
 };
