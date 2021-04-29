@@ -599,7 +599,6 @@ void Arunchar::checkifledgeclimb()
 		UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,25 }, charloc + FVector{ 0,0,25 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
 		)
 	{
-		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 		PlayAnimMontage(Ledgeclimb);
 		isledgeclimbing = true;
