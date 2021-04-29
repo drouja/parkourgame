@@ -474,14 +474,14 @@ void Arunchar::updatewallrun()
 		FVector wallrunnorm{};
 
 		//Just raycasts for walls
-		if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + -75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
+		if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + -75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
 		{
 			wallrunloc = outhit.Location;
 			wallrunnorm = outhit.Normal;
 			wallrunnorm.Normalize();
 			walldirectflip = 1;
 		}
-		else if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + 75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
+		else if (UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + 75 * sliderv, UEngineTypes::ConvertToTraceType(ECC_Camera), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
 		{
 			wallrunloc = outhit.Location;
 			wallrunnorm =outhit.Normal;
@@ -615,8 +615,8 @@ void Arunchar::checkfvault()
 	FHitResult outhit2;
 	FHitResult outhit3;
 	if (!(GetVelocity().Z < -1) && !(UKismetMathLibrary::Dot_VectorVector(normalizevector(GetVelocity()), GetActorForwardVector()) < 0.4) &&
-		UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() + FVector{ 0,0,20 }, GetActorLocation() + FVector{ 0,0,20 } + GetActorForwardVector() * 200, FVector(10, 10, 20), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f) &&
-		!UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() + FVector{ 0,0,80 }, GetActorLocation() + FVector{ 0,0,80 } + GetActorForwardVector() * 200, FVector(10, 10, 40), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit2, true, FLinearColor::Red, FLinearColor::Red, 0.0f)
+		UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() + FVector{ 0,0,20 }, GetActorLocation() + FVector{ 0,0,20 } + GetActorForwardVector() * 200, FVector(10, 10, 20), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f) &&
+		!UKismetSystemLibrary::BoxTraceSingle(this, GetActorLocation() + FVector{ 0,0,80 }, GetActorLocation() + FVector{ 0,0,80 } + GetActorForwardVector() * 200, FVector(10, 10, 40), FRotator{ 0,0,0 }, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::ForOneFrame, outhit2, true, FLinearColor::Red, FLinearColor::Red, 0.0f)
 		)
 	{
 		if (UKismetSystemLibrary::LineTraceSingle(this, outhit.Location + FVector{ 0,0,50 } - 15 * outhit.Normal, outhit.Location + FVector{ 0,0,-30 } - 15 * outhit.Normal, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit2, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
