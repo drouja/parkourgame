@@ -79,6 +79,7 @@ Arunchar::Arunchar()
 	curvevall = 0;
 	turnchange = 5;
 	turnratio = 1;
+	maxslidez = -2;
 	isturning = false;
 	inrangeofinteractible = false;
 	
@@ -317,14 +318,21 @@ void Arunchar::Startslide()
 
 void Arunchar::Updateslide()
 {
-	if (!issliding) return;
+	Setslidevector();
 	UCharacterMovementComponent* charmov = GetCharacterMovement();
+	if (!issliding && slidevector.Z <= maxslidez && slidevector.Z >= -1)
+	{
+		charmov->AddImpulse(GetActorForwardVector(), true);
+		Startslide();
+		return;
+	}
+	if (!issliding) return;
 	if (GetVelocity().Size()<35 || !charmov->IsCrouching())
 	{
 		Endslide();
 		return;
 	}
-	if (Setslidevector().Z <= -0.2)
+	if (slidevector.Z <= -0.2)
 	{
 		charmov->BrakingDecelerationWalking = 0;
 		charmov->AddImpulse(GetActorForwardVector(),true);
@@ -348,6 +356,7 @@ void Arunchar::Endslide()
 {
 	UCharacterMovementComponent* charmov = GetCharacterMovement();
 	issliding = false;
+	Allowalli();
 	ACharacter::UnCrouch();
 	charmov->GroundFriction = origfrict;
 	charmov->BrakingDecelerationWalking = origbrakedecel;
@@ -360,9 +369,15 @@ void Arunchar::Endslide()
 void Arunchar::Jump()
 {
 	
-	if (takejump && !GetCharacterMovement()->IsFalling() && !bIsCrouched)
+	if (takejump && !GetCharacterMovement()->IsFalling())
 	{
 		Super::Jump();
+		if (issliding)
+		{
+			Endslide();
+			LaunchCharacter(FVector{ 0,0,350 },false,false);
+		}
+		
 		takeyaw = false;
 
 		if (FVector::DotProduct(GetActorForwardVector(),GetVelocity())>0.0)
@@ -400,6 +415,7 @@ void Arunchar::UnSpace()
 
 void Arunchar::Falling()
 {
+	Endslide();
 	startheight = GetActorLocation().Z;
 }
 

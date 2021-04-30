@@ -76,6 +76,7 @@ public:
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 	bool issliding;
+	UFUNCTION(BlueprintCallable, Category = Getmovementstate)
 	void Startslide();
 	void Updateslide();
 	void Endslide();
@@ -86,6 +87,9 @@ public:
 	float origbrakedecel;
 	float origfrict;
 	float origcrouchspeed;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
+	float maxslidez;
+
 private:
 	FTimerHandle slideupdatehandle;
 	FVector slidefv;
