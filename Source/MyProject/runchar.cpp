@@ -267,7 +267,7 @@ void Arunchar::calculaterootyawoffset()
 void Arunchar::Crouch()
 {
 	if (!takecrouch) return;
-	if (GetCharacterMovement()->IsCrouching()) ACharacter::UnCrouch();
+	if (GetCharacterMovement()->IsCrouching() && !(slidevector.Z <= maxslidez)) ACharacter::UnCrouch();
 	else if (isziplining)
 	{
 		endoverlapdelegate.ExecuteIfBound(nullptr,this,nullptr,0);
@@ -322,7 +322,7 @@ void Arunchar::Updateslide()
 	UCharacterMovementComponent* charmov = GetCharacterMovement();
 	if (!issliding && slidevector.Z <= maxslidez && slidevector.Z >= -1)
 	{
-		charmov->AddImpulse(GetActorForwardVector(), true);
+		charmov->AddImpulse(slidevector, true);
 		Startslide();
 		return;
 	}
@@ -415,7 +415,7 @@ void Arunchar::UnSpace()
 
 void Arunchar::Falling()
 {
-	Endslide();
+	if (issliding) Endslide();
 	startheight = GetActorLocation().Z;
 }
 
@@ -516,7 +516,7 @@ void Arunchar::updatewallrun()
 		playervel.Z = 0;
 		double wallcheck = abs(UKismetMathLibrary::Cross_VectorVector(playervel, wallrunnorm).Size());
 		
-		if (-0.52 <= wallrunnorm.Z && wallrunnorm.Z <= 0.52 && 500<wallcheck)
+		if (-0.52 <= wallrunnorm.Z && wallrunnorm.Z <= 0.52 && 300<wallcheck)
 		{
 			iswallrunning = true;
 			takeyaw = true;
@@ -606,7 +606,7 @@ void Arunchar::checkifledgeclimb()
 	FVector FV = 50 * GetActorForwardVector();
 	FRotator rot = GetActorRotation();
 	FHitResult outhit;
-	if (abs(charvel.Z) > 20 * (abs(charvel.X) + abs(charvel.Y))
+	if (100>(abs(charvel.X) + abs(charvel.Y))
 		&&
 		!UKismetSystemLibrary::BoxTraceSingle(this, charloc + FVector{ 0,0,65 }, charloc + FVector{ 0,0,65 } + FV, FVector(20, 20, 10), rot, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, outhit, true, FLinearColor::Green, FLinearColor::Green, 0.0f)
 		&&
