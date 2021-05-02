@@ -322,6 +322,8 @@ void Arunchar::Updateslide()
 	UCharacterMovementComponent* charmov = GetCharacterMovement();
 	if (!issliding && slidevector.Z <= maxslidez && slidevector.Z >= -1)
 	{
+		StopAnimMontage(Hardlanding);
+		StopAnimMontage(Rolllanding);
 		charmov->AddImpulse(slidevector, true);
 		Startslide();
 		return;
