@@ -386,7 +386,7 @@ void Arunchar::Jump()
 		{
 		sliderv = GetActorRightVector();
 		canwallclimb = true;
-		GetWorldTimerManager().SetTimer(wallrunstart, this, &Arunchar::delaywallrun1, 0.5f, false);
+		GetWorldTimerManager().SetTimer(wallrunstart, this, &Arunchar::delaywallrun1, 0.3f, false);
 		}
 	}
 	else if (iswallrunning || isquickturning)
