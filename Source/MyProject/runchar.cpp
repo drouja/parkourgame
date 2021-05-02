@@ -785,7 +785,23 @@ void Arunchar::stopcoiljump()
 
 void Arunchar::quickturn()
 {
-	if (canquickturn && !isquickturning)
+	if (iswallrunning)
+	{
+		FRotator targetrot = GetControlRotation();
+		if (walldirectflip==1)
+		{
+			targetrot.Yaw = sliderot + 90;
+			smoothrotdel.BindUObject(this, &Arunchar::smoothrot,targetrot,2.0f);
+			GetWorld()->GetTimerManager().SetTimer(smoothrothandle, smoothrotdel, 0.005f, true);
+		}
+		else
+		{
+			targetrot.Yaw = sliderot - 90;
+			smoothrotdel.BindUObject(this, &Arunchar::smoothrot, targetrot, 2.0f);
+			GetWorld()->GetTimerManager().SetTimer(smoothrothandle, smoothrotdel, 0.005f, true);
+		}
+	}
+	else if (canquickturn && !isquickturning)
 	{
 		canwallclimb = false;
 		iswallclimbing = false;
@@ -824,4 +840,15 @@ void Arunchar::endquickturn(UAnimMontage* mont, bool interupted)
 {
 	FollowCamera->bUsePawnControlRotation = 1;
 	
+}
+
+void Arunchar::smoothrot(FRotator targetrot, float scale)
+{
+	if (GetControlRotation().Equals(targetrot,2.0f))
+	{
+		GetWorldTimerManager().ClearTimer(smoothrothandle);
+		return;
+	}
+	pc->SetControlRotation(FMath::RInterpTo(GetControlRotation(),targetrot,GetWorld()->GetDeltaSeconds(),scale));
+	calculaterootyawoffset();
 }

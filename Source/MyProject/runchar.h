@@ -269,4 +269,9 @@ protected:
 		bool isledgeclimbing;
 		FOnMontageEnded endledgeclimbdelegate;
 		void endledgeclimb(UAnimMontage* mont, bool interupted);
+//Smoothsetcamerarot
+		FTimerHandle smoothrothandle;
+		FTimerDelegate smoothrotdel;
+		void smoothrot(FRotator targetrot, float scale = 1.0f);
+
 };
