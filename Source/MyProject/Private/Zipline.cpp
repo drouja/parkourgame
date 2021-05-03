@@ -102,7 +102,7 @@ void AZipline::BeginOverlap(UPrimitiveComponent* OverlappedComponent,
 
 
 		
-		GetWorldTimerManager().SetTimer(updatezipmovementhandle, this, &AZipline::updatezipmovement, 0.01f, true, 0.0f);
+		GetWorldTimerManager().SetTimer(updatezipmovementhandle, this, &AZipline::updatezipmovement, 0.001f, true, 0.0f);
 	}
 }
 void AZipline::EndOverlap(UPrimitiveComponent* OverlappedComponent, 

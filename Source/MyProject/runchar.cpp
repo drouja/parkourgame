@@ -791,13 +791,13 @@ void Arunchar::quickturn()
 		if (walldirectflip==1)
 		{
 			targetrot.Yaw = sliderot + 90;
-			smoothrotdel.BindUObject(this, &Arunchar::smoothrot,targetrot,2.0f);
+			smoothrotdel.BindUObject(this, &Arunchar::smoothrot,targetrot,5.0f);
 			GetWorld()->GetTimerManager().SetTimer(smoothrothandle, smoothrotdel, 0.005f, true);
 		}
 		else
 		{
 			targetrot.Yaw = sliderot - 90;
-			smoothrotdel.BindUObject(this, &Arunchar::smoothrot, targetrot, 2.0f);
+			smoothrotdel.BindUObject(this, &Arunchar::smoothrot, targetrot, 5.0f);
 			GetWorld()->GetTimerManager().SetTimer(smoothrothandle, smoothrotdel, 0.005f, true);
 		}
 	}
