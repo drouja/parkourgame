@@ -59,6 +59,11 @@ void Arunchar::setgrav(bool resetgrav, float newgrav)
 	}
 }
 
+
+FGenericTeamId Arunchar::GetGenericTeamId() const
+{
+	return FGenericTeamId{ 0 };
+}
 //----------------
 
 // Sets default values
@@ -66,7 +71,7 @@ Arunchar::Arunchar()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-	
+
 	sensitivity=3;
 
 	pitch = 0;

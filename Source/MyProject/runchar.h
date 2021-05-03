@@ -4,15 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "GenericTeamAgentInterface.h"
 #include "Components/BoxComponent.h"
 #include "runchar.generated.h"
 
 
 
 UCLASS()
-class MYPROJECT_API Arunchar : public ACharacter
+class MYPROJECT_API Arunchar : public ACharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
+
 	DECLARE_DELEGATE_FourParams(Endziplinesignature, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32);
 
 	/** Follow camera */
@@ -55,6 +57,9 @@ protected:
 	void Interact();
 
 	void UnInteract();
+
+	//Set Team
+	virtual FGenericTeamId GetGenericTeamId() const override;
 
 	public: 
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Actions) bool interactbuttondown;
@@ -273,5 +278,4 @@ protected:
 		FTimerHandle smoothrothandle;
 		FTimerDelegate smoothrotdel;
 		void smoothrot(FRotator targetrot, float scale = 1.0f);
-
 };
