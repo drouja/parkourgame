@@ -72,6 +72,8 @@ Arunchar::Arunchar()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+	currenthealth = maxhealth = 5;
+
 	sensitivity=3;
 
 	pitch = 0;
@@ -164,6 +166,12 @@ void Arunchar::BeginPlay()
 	origcrouchspeed = GetCharacterMovement()->MaxWalkSpeedCrouched;
 	pc=GEngine->GetFirstLocalPlayerController(GetWorld());
 	Wallturn->bEnableAutoBlendOut = false;
+
+	//Dynamic material setup
+	Speedlines = UMaterialInstanceDynamic::Create(Speedlinesmat, this);
+	FollowCamera->AddOrUpdateBlendable(Speedlines);
+	Healtheffect = UMaterialInstanceDynamic::Create(Healtheffectmat, this);
+	FollowCamera->AddOrUpdateBlendable(Healtheffect);
 }
 
 // Called every frame
@@ -191,6 +199,9 @@ void Arunchar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void Arunchar::MoveForward(float Value)
 {
+	float basecalc = (GetVelocity().Size() - 600) / 200;
+	Speedlines->SetScalarParameterValue(TEXT("Weight"), clamp(basecalc, 0.0f, 1.0f));
+	Speedlines->SetScalarParameterValue(TEXT("Flickerspeed"), clamp(basecalc, 0.0f, 0.25f));
 	if (takews && !issliding && (Controller != nullptr) && (Value != 0.0f))
 	{
 		// find out which way is forward
@@ -855,4 +866,11 @@ void Arunchar::smoothrot(FRotator targetrot, float scale)
 	}
 	pc->SetControlRotation(FMath::RInterpTo(GetControlRotation(),targetrot,GetWorld()->GetDeltaSeconds(),scale));
 	calculaterootyawoffset();
+}
+
+float Arunchar::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	currenthealth -= Damage;
+	Healtheffect->SetScalarParameterValue(TEXT("Weight"), currenthealth / maxhealth);
+	return currenthealth;
 }

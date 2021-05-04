@@ -61,8 +61,15 @@ protected:
 	//Set Team
 	virtual FGenericTeamId GetGenericTeamId() const override;
 
+	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stats)
+	float maxhealth;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stats)
+	float currenthealth;
+
 	public: 
-		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Actions) bool interactbuttondown;
+		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Actions)
+		bool interactbuttondown;
 		void calculaterootyawoffset();
 
 public:
@@ -278,4 +285,13 @@ protected:
 		FTimerHandle smoothrothandle;
 		FTimerDelegate smoothrotdel;
 		void smoothrot(FRotator targetrot, float scale = 1.0f);
+
+//Post Process Mats
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Materials)
+	UMaterial* Speedlinesmat;
+	UMaterialInstanceDynamic* Speedlines;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Materials)
+	UMaterial* Healtheffectmat;
+	UMaterialInstanceDynamic* Healtheffect;
 };
