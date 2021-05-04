@@ -384,8 +384,6 @@ void Arunchar::Jump()
 			Endslide();
 			LaunchCharacter(FVector{ 0,0,350 },false,false);
 		}
-		
-		takeyaw = false;
 
 		if (FVector::DotProduct(GetActorForwardVector(),GetVelocity())>0.0)
 		{
@@ -424,6 +422,7 @@ void Arunchar::Falling()
 {
 	if (issliding) Endslide();
 	startheight = GetActorLocation().Z;
+	takeyaw = false;
 }
 
 void Arunchar::setisMoving()
