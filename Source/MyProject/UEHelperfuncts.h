@@ -5,6 +5,7 @@
 #include <string>
 #include <algorithm>
 #include <math.h>
+#include <stdio.h>
 
 template<class T>
 inline T clamp(const T in, T min, T max)
@@ -41,4 +42,12 @@ inline float smallestangledelta(float a, float b)
 	float c = a - b;
 	c += (c > 180) ? -360 : (c < -180) ? 360 : 0;
 	return c;
+}
+
+inline FString AddLeadingZeroes(const int& unformattednum, const int minlength)
+{
+	char Buffer[10];
+	snprintf(Buffer, 10, "%0*d", minlength, unformattednum);
+	return FString{ Buffer };
+
 }
