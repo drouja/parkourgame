@@ -63,7 +63,6 @@ void ACheckpointmanager::Checkpointreached(ACheckpoint::Checkpointtype checktype
 		GetWorldTimerManager().ClearTimer(timerhandle);
 		ACheckpointmanager::endtimer();
 	}
-
 }
 
 void ACheckpointmanager::timetrial()
@@ -78,7 +77,7 @@ void ACheckpointmanager::timetrial()
 
 void ACheckpointmanager::endtimer_Implementation()
 {
-	if (ULocalHighScoreSave* savedscore = Cast<ULocalHighScoreSave>(UGameplayStatics::LoadGameFromSlot("Score", 0)))
+	if (ULocalHighScoreSave* savedscore = Cast<ULocalHighScoreSave>(UGameplayStatics::LoadGameFromSlot(GetWorld()->GetMapName(), 0)))
 	{
 		currentbest=savedscore->besttime;
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some debug message!"));
@@ -89,7 +88,7 @@ void ACheckpointmanager::endtimer_Implementation()
 			if (ULocalHighScoreSave* savescore = Cast<ULocalHighScoreSave>(UGameplayStatics::CreateSaveGameObject(ULocalHighScoreSave::StaticClass())))
 			{
 				savescore->besttime = timepassed;
-				UGameplayStatics::SaveGameToSlot(savescore, "Score", 0);
+				UGameplayStatics::SaveGameToSlot(savescore, GetWorld()->GetMapName(), 0);
 			}
 		}
 		else
@@ -105,7 +104,7 @@ void ACheckpointmanager::endtimer_Implementation()
 		if (ULocalHighScoreSave* savescore = Cast<ULocalHighScoreSave>(UGameplayStatics::CreateSaveGameObject(ULocalHighScoreSave::StaticClass())))
 		{
 			savescore->besttime = timepassed;
-			UGameplayStatics::SaveGameToSlot(savescore, "Score", 0);
+			UGameplayStatics::SaveGameToSlot(savescore, GetWorld()->GetMapName(), 0);
 		}
 	}
 }
