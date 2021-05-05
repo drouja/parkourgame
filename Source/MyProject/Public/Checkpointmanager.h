@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Checkpoint.h"
 #include "GameFramework/Actor.h"
+#include "LocalHighScoreSave.h"
+#include "Kismet/GameplayStatics.h"
 #include "Checkpointmanager.generated.h"
 
 UCLASS()
@@ -25,6 +27,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = TimeTrialProperties)
 	FString timepassedstring;
 	void timetrial();
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	void endtimer();
+
+	virtual void endtimer_Implementation();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = TimeTrialProperties)
+	FString endscreenflavourtext;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = TimeTrialProperties)
+	float currentbest;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = TimeTrialProperties)
+	FString differenceintime;
+
 
 public:
 	// Called every frame
