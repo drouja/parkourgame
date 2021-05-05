@@ -11,6 +11,9 @@ ACheckpointmanager::ACheckpointmanager()
 	PrimaryActorTick.bCanEverTick = false;
 	timepassed = 0;
 	timepassedstring = "00:00:000";
+	threestarpercent = 1;
+	twostarpercent = 1;
+	onestarpercent = 1;
 }
 
 // Called when the game starts or when spawned
@@ -57,5 +60,8 @@ void ACheckpointmanager::timetrial()
 	int minutes = timepassedint / 60;
 	int seconds = timepassedint % 60;
 	timepassedstring = AddLeadingZeroes(minutes,2) + ":" + AddLeadingZeroes(seconds, 2) + ":" + AddLeadingZeroes(milliseconds, 3);
+	threestarpercent = (threestartime - timepassed) / threestartime;
+	twostarpercent = (twostartime - timepassed) / (twostartime-threestartime);
+	onestarpercent = (onestartime - timepassed) / (onestartime - twostartime);
 	return;
 }

@@ -29,7 +29,20 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = TimeTrialProperties)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = TimeTrialProperties)
 	float timepassed;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = TimeTrialProperties, meta = (ClampMin = "1.0", UIMin = "1.0"))
+	float threestartime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = TimeTrialProperties, meta = (ClampMin = "1.0", UIMin = "1.0"))
+	float twostartime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = TimeTrialProperties, meta = (ClampMin = "1.0", UIMin = "1.0"))
+	float onestartime;
 	FTimerHandle timerhandle;
+//Hud stars variables:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = TimeTrialProperties)
+		float threestarpercent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = TimeTrialProperties)
+		float twostarpercent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = TimeTrialProperties)
+		float onestarpercent;
 };
