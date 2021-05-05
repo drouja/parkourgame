@@ -400,7 +400,7 @@ void Arunchar::Jump()
 		{
 		sliderv = GetActorRightVector();
 		canwallclimb = true;
-		GetWorldTimerManager().SetTimer(wallrunstart, this, &Arunchar::delaywallrun1, 0.3f, false);
+		GetWorldTimerManager().SetTimer(wallrunstart, this, &Arunchar::delaywallrun1, 0.001f, true);
 		}
 	}
 	else if (iswallrunning || isquickturning)
@@ -414,7 +414,7 @@ void Arunchar::Jump()
 		StopAnimMontage(Wallturn);
 		GetWorldTimerManager().ClearTimer(delayfall);
 		isquickturning = false;
-		ACharacter::LaunchCharacter(500*(FollowCamera->GetForwardVector()+FollowCamera->GetUpVector()),true,true);
+		ACharacter::LaunchCharacter(700*(FollowCamera->GetForwardVector())+400*FollowCamera->GetUpVector(),true,true);
 		canwallrun = false;
 	}
 }
@@ -484,12 +484,19 @@ void Arunchar::updateaccel()
 
 void Arunchar::delaywallrun1()
 {
-	if (!vaulting)
+	FHitResult Outhit;
+	if (vaulting)
 	{
-		
+		GetWorldTimerManager().ClearTimer(wallrunstart);
+	}
+	else if (!vaulting && GetVelocity().Z<0 || !UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() - 130 * GetActorUpVector(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::Persistent, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
+	{
 		canwallrun = true;
 		GetWorldTimerManager().SetTimer(wallruntime, this, &Arunchar::delaywallrun2, 1.2f, false);
+		GetWorldTimerManager().ClearTimer(wallrunstart);
 	}
+	
+	
 }
 
 void Arunchar::delaywallrun2()
@@ -859,7 +866,8 @@ void Arunchar::endquickturn(UAnimMontage* mont, bool interupted)
 
 void Arunchar::smoothrot(FRotator targetrot, float scale)
 {
-	if (GetControlRotation().Equals(targetrot,2.0f))
+	targetrot.Pitch = GetControlRotation().Pitch;
+	if (GetControlRotation().Equals(targetrot,3.0f))
 	{
 		GetWorldTimerManager().ClearTimer(smoothrothandle);
 		return;
