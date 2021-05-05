@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "GenericTeamAgentInterface.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "runchar.generated.h"
 
 
@@ -26,6 +27,7 @@ class MYPROJECT_API Arunchar : public ACharacter, public IGenericTeamAgentInterf
 	TSubclassOf<class AOmnitool> omnitoolclass;
 	class UCapsuleComponent* hitb;
 		float hitbheight;
+	APlayerCameraManager* cm;
 
 public:
 	// Sets default values for this character's properties
@@ -294,4 +296,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Materials)
 	UMaterial* Healtheffectmat;
 	UMaterialInstanceDynamic* Healtheffect;
+	void resetplayer(UAnimMontage* mont, bool interupted);
+	FOnMontageEnded enddeathdelegate;
+	bool isdying;
+public:
+	FVector respawnloc;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
+	UAnimMontage* deathmontage;
 };

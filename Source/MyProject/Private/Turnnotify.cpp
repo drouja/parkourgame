@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "Turnnotify.h"
-#include "C:\Users\potat\Desktop\MyProject\Source\MyProject\runchar.h"
+#include "../runchar.h"
 
 void UTurnnotify::NotifyBegin(class USkeletalMeshComponent* MeshComp, class UAnimSequenceBase* Animation, float TotalDuration)
 {

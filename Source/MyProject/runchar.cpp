@@ -147,6 +147,10 @@ Arunchar::Arunchar()
 	//Ledgegrab/climb
 	isledgeclimbing = false;
 	endledgeclimbdelegate.BindUObject(this, &Arunchar::endledgeclimb);
+
+	//Death stuff
+	enddeathdelegate.BindUObject(this, &Arunchar::resetplayer);
+	isdying = false;
 }
 
 // Called when the game starts or when spawned
@@ -172,6 +176,10 @@ void Arunchar::BeginPlay()
 	FollowCamera->AddOrUpdateBlendable(Speedlines);
 	Healtheffect = UMaterialInstanceDynamic::Create(Healtheffectmat, this);
 	FollowCamera->AddOrUpdateBlendable(Healtheffect);
+
+	respawnloc = GetActorLocation();
+
+	cm = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
 }
 
 // Called every frame
@@ -878,7 +886,26 @@ void Arunchar::smoothrot(FRotator targetrot, float scale)
 
 float Arunchar::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (isdying) return 0;
 	currenthealth -= Damage;
 	Healtheffect->SetScalarParameterValue(TEXT("Weight"), currenthealth / maxhealth);
+	if (currenthealth <= 0)
+	{
+		cm->StartCameraFade(0.0f, 1.0f, 2.0f, FLinearColor{0,0,0,1},true,true);
+		isdying = true;
+		PlayAnimMontage(deathmontage);
+		GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(enddeathdelegate, deathmontage);
+		FollowCamera->bUsePawnControlRotation = 0;
+	}
 	return currenthealth;
+}
+
+void Arunchar::resetplayer(UAnimMontage* mont, bool interupted)
+{
+	cm->StartCameraFade(1.0f, 0.0f, 1.0f, FLinearColor{ 0,0,0,1 }, true, true);
+	isdying = false;
+	FollowCamera->bUsePawnControlRotation = 1;
+	currenthealth = maxhealth;
+	SetActorLocation(respawnloc);
+	Healtheffect->SetScalarParameterValue(TEXT("Weight"), 1);
 }

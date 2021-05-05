@@ -3,6 +3,7 @@
 
 #include "Checkpointmanager.h"
 #include "../UEHelperfuncts.h"
+#include "../runchar.h"
 
 
 FString formatsecs(float timepassed)
@@ -43,6 +44,7 @@ void ACheckpointmanager::BeginPlay()
 	for (int i = 1; i < checkpointarray.Num() - 1; i++)
 	{
 		checkpointarray[i]->checktype = ACheckpoint::Middle;
+		checkpointarray[i]->checkreachdelegate.BindUObject(this, &ACheckpointmanager::Checkpointreached);
 	}
 
 }
@@ -63,6 +65,10 @@ void ACheckpointmanager::Checkpointreached(ACheckpoint::Checkpointtype checktype
 		GetWorldTimerManager().ClearTimer(timerhandle);
 		ACheckpointmanager::endtimer();
 	}
+	if (Arunchar* playerpawn = Cast<Arunchar>(UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetPawn()))
+	{
+		playerpawn->respawnloc = playerpawn->GetActorLocation();
+	}
 }
 
 void ACheckpointmanager::timetrial()
@@ -77,6 +83,10 @@ void ACheckpointmanager::timetrial()
 
 void ACheckpointmanager::endtimer_Implementation()
 {
+	if (threestarpercent >= 0) threestarpercent = 1;
+	else if (twostarpercent >= 0) twostarpercent = 1;
+	else if (onestarpercent >= 0) onestarpercent = 1;
+
 	if (ULocalHighScoreSave* savedscore = Cast<ULocalHighScoreSave>(UGameplayStatics::LoadGameFromSlot(GetWorld()->GetMapName(), 0)))
 	{
 		currentbest=savedscore->besttime;
