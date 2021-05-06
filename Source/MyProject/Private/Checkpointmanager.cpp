@@ -117,5 +117,6 @@ void ACheckpointmanager::endtimer_Implementation()
 			UGameplayStatics::SaveGameToSlot(savescore, GetWorld()->GetMapName(), 0);
 		}
 	}
+	UGameplayStatics::SetGamePaused(GetWorld(),true);
 }
 

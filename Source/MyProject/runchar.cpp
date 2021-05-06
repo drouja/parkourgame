@@ -396,7 +396,7 @@ void Arunchar::Jump()
 {
 	if (takejump && !GetCharacterMovement()->IsFalling())
 	{
-		UGameplayStatics::PlaySound2D(GetWorld(), hitsound1, UKismetMathLibrary::RandomFloatInRange(0.2, 0.4),UKismetMathLibrary::RandomFloatInRange(0.8,1));
+		UGameplayStatics::PlaySound2D(GetWorld(), hitsound1, UKismetMathLibrary::RandomFloatInRange(0.2, 0.4),UKismetMathLibrary::RandomFloatInRange(1,1.2));
 		Super::Jump();
 		if (issliding)
 		{
