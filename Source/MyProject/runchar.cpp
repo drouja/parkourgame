@@ -396,7 +396,7 @@ void Arunchar::Jump()
 {
 	if (takejump && !GetCharacterMovement()->IsFalling())
 	{
-		UGameplayStatics::PlaySound2D(GetWorld(), hitsound1, UKismetMathLibrary::RandomFloatInRange(0.2, 0.4),UKismetMathLibrary::RandomFloatInRange(1,1.2));
+		UGameplayStatics::PlaySound2D(GetWorld(), jumpsound, UKismetMathLibrary::RandomFloatInRange(0.2, 0.4),UKismetMathLibrary::RandomFloatInRange(1,1.2));
 		Super::Jump();
 		if (issliding)
 		{
@@ -413,7 +413,7 @@ void Arunchar::Jump()
 	}
 	else if (iswallrunning || isquickturning)
 	{
-		UGameplayStatics::PlaySound2D(GetWorld(), hitsound1);
+		UGameplayStatics::PlaySound2D(GetWorld(), jumpsound, UKismetMathLibrary::RandomFloatInRange(0.2, 0.4), UKismetMathLibrary::RandomFloatInRange(1, 1.2));
 		if (isquickturning)
 		{
 			yaw = pc->GetControlRotation().Yaw + 180;
@@ -453,9 +453,11 @@ void Arunchar::setisMoving()
 void Arunchar::Landed(const FHitResult& Hit)
 {
 	stopcoiljump();
+	UGameplayStatics::PlaySound2D(GetWorld(), lightlandsound);
 	//Super::OnLanded(Hit); do I need? Can't find function definition
 	if (GetActorLocation().Z-startheight<-900)
 	{
+		UGameplayStatics::PlaySound2D(GetWorld(), landsound);
 		Disablealli();
 		if (willroll)
 		{
@@ -892,7 +894,7 @@ float Arunchar::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AContr
 	Healtheffect->SetScalarParameterValue(TEXT("Weight"), currenthealth / maxhealth);
 	if (currenthealth <= 0)
 	{
-		UGameplayStatics::PlaySound2D(GetWorld(), hitsound2);
+		UGameplayStatics::PlaySound2D(GetWorld(), hitsound);
 		cm->StartCameraFade(0.0f, 1.0f, 2.0f, FLinearColor{0,0,0,1},true,true);
 		isdying = true;
 		PlayAnimMontage(deathmontage);

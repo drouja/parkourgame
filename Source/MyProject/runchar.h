@@ -305,8 +305,13 @@ public:
 	FVector respawnloc;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 	UAnimMontage* deathmontage;
+//SFX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX)
-	USoundBase* hitsound1;
+	USoundBase* jumpsound;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX)
-	USoundBase* hitsound2;
+	USoundBase* hitsound;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX)
+	USoundBase* landsound;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX)
+	USoundBase* lightlandsound;
 };
