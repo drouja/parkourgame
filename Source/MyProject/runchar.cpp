@@ -442,7 +442,6 @@ void Arunchar::Falling()
 {
 	if (issliding) Endslide();
 	startheight = GetActorLocation().Z;
-	takeyaw = false;
 }
 
 void Arunchar::setisMoving()
@@ -503,7 +502,7 @@ void Arunchar::delaywallrun1()
 	else if (!vaulting && GetVelocity().Z<0 || !UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() - 130 * GetActorUpVector(), UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, actorsToIgnore, EDrawDebugTrace::None, Outhit, true, FLinearColor::Red, FLinearColor::Green, 0.0f))
 	{
 		canwallrun = true;
-		GetWorldTimerManager().SetTimer(wallruntime, this, &Arunchar::delaywallrun2, 1.2f, false);
+		GetWorldTimerManager().SetTimer(wallruntime, this, &Arunchar::delaywallrun2, 2.0f, false);
 		GetWorldTimerManager().ClearTimer(wallrunstart);
 	}
 }
