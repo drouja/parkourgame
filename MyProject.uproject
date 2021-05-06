@@ -36,6 +36,10 @@
 				"Win64",
 				"Linux"
 			]
+		},
+		{
+			"Name": "StaticMeshEditorExtension",
+			"Enabled": true
 		}
 	]
 }

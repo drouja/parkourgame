@@ -7,6 +7,7 @@
 #include "GenericTeamAgentInterface.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
 #include "runchar.generated.h"
 
 
@@ -296,6 +297,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Materials)
 	UMaterial* Healtheffectmat;
 	UMaterialInstanceDynamic* Healtheffect;
+	UFUNCTION(BlueprintCallable, Category = Animations)
 	void resetplayer(UAnimMontage* mont, bool interupted);
 	FOnMontageEnded enddeathdelegate;
 	bool isdying;
@@ -303,4 +305,8 @@ public:
 	FVector respawnloc;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 	UAnimMontage* deathmontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX)
+	USoundBase* hitsound1;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SFX)
+	USoundBase* hitsound2;
 };
