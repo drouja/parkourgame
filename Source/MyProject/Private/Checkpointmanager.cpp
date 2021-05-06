@@ -57,8 +57,6 @@ void ACheckpointmanager::Tick(float DeltaTime)
 
 void ACheckpointmanager::Checkpointreached(ACheckpoint::Checkpointtype checktype)
 {
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Checkpoint reached"));
 	if (checktype == ACheckpoint::Start) GetWorldTimerManager().SetTimer(timerhandle, this, &ACheckpointmanager::timetrial, 0.001f, true);
 	else if (checktype == ACheckpoint::End)
 	{
